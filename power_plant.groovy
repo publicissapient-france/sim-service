@@ -1,3 +1,4 @@
+import org.vertx.groovy.core.eventbus.Message
 import org.vertx.groovy.platform.Container
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -7,9 +8,6 @@ import org.vertx.groovy.core.Vertx
 Vertx vx = vertx
 Container dock = container
 
-/**
- * Configuration
- */
 def me = [
         id  : UUID.randomUUID().toString(),
         type: 'power.plant',
@@ -62,8 +60,11 @@ vx.setPeriodic(conf.productionPeriod) { timerID ->
     emit(channels.output.status, [load: newLoad])
 }
 
-vx.eventBus.registerHandler(channels.input.consume) { message ->
+vx.eventBus.registerHandler(channels.input.consume) { Message message ->
     println "Received on "+channels.input.consume
+
+
+
     if (message.body.need && message.body.replyTo) {
         int power = message.body.need.toInteger()
         int newLoad = load.addAndGet(-1 * power)
