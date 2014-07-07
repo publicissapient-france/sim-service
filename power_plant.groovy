@@ -11,7 +11,7 @@ Container dock = container
  * Configuration
  */
 def me = [
-        id: UUID.randomUUID().toString(),
+        id  : UUID.randomUUID().toString(),
         type: 'power.plant',
 ]
 
@@ -19,16 +19,16 @@ def channels = [
         output: [
                 status: me.type + '.status'
         ],
-        input: [
-                consume: me.type + 'consume'
+        input : [
+                consume: me.type + '.consume'
         ]
 ]
 
 def conf = [
-        maxLoad: (dock.config[me.type]?.maxLoad ?: 10).toInteger(),
-        initLoad: (dock.config[me.type]?.initLoad ?: 0).toInteger(),
+        maxLoad         : (dock.config[me.type]?.maxLoad ?: 10).toInteger(),
+        initLoad        : (dock.config[me.type]?.initLoad ?: 0).toInteger(),
         productionPeriod: (dock.config[me.type]?.productionPeriod ?: 1000).toInteger(),
-        startChannel: 'monitoring.service.start'
+        startChannel    : 'monitoring.service.start'
 ]
 
 /**
@@ -63,11 +63,18 @@ vx.setPeriodic(conf.productionPeriod) { timerID ->
 }
 
 vx.eventBus.registerHandler(channels.input.consume) { message ->
+    println "Received on "+channels.input.consume
     if (message.body.need && message.body.replyTo) {
-
+        int power = message.body.need.toInteger()
+        int newLoad = load.addAndGet(-1 * power)
+        if (newLoad < 0) {
+            load.set(0)
+            power = power + newLoad
+        }
+        emit(message.body.replyTo,[power: power])
     }
 }
 
-emit(conf.startChannel,  channels)
+emit(conf.startChannel, channels)
 
 
