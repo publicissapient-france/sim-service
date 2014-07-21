@@ -1,3 +1,3 @@
 #!/bin/sh
 
-vertx run power_plant.groovy -conf power_plant.conf -cluster
+vertx run services/power_plant.groovy -conf services/power_plant.conf -cluster
