@@ -7,32 +7,26 @@ $ brew install vert.x
 # Getting started
 
 ## Start services
-$ ./run.sh
+$ ./services.sh
 
-## Start web-server
-$ vertx runmod io.vertx~mod-web-server~2.0.0-final -conf vertx.webserver.conf
+## Start server
+$ ./server.sh
 
 # Streams
-All stream addresses are composed like this : "target_service_id"."source_service_id"
+
+## All
+Every service "s" of type "t" announces itself to
+service.t => [id:"s", type:"t", name:"Service Name"]
 
 ## PowerPlant
-PowerPlant receives resource request from Factory "factory_id"  
-power_plant_id.factory_id <= {}
-
-PowerPlant receives service "www" creation from Bank "bank_id"
-power_plant_id.bank_id <= {"service_id":"www"}
+PowerPlant "pp" receives power request from Factory "f"  
+service.powerPlant.pp <= [powerRequest:10, factory:"f"]
 
 ## Factory
-Factory receives resource "xxx" from PowerPlant "power_plant_id"  
-factory_id.power_plant_id <= {"resourceId":"xxx"}  
-  
-Factory consumes credit "zzz" from Bank "bank_id" for resource "xxx" consumption  
-factory_id.bank_id <= {"resourceId":"xxx", "creditId":"zzz"}  
-  
-Factory receives credit "zzz" from Bank "bank_id" for product "yyy" production    
-factory_id.bank_id => {"productId":"yyy", "creditId":"zzz"}  
+Factory "f" receives power response from PowerPlant "pp"   
+service.factory.f <= [powerResponse:5, powerPlant:"pp"]  
 
 ## Bank
-Bank "bank_id" receives a service creation request and identifies the new service "www"  
-bank_id <= {"message":"Hello Georges"}  
-(reply) => {"serviceId":"www", "message":"Hi there www"}  
+Bank "b" receives power requests and responses from PowerPlant "pp" and factory "f"
+service.powerPlant.pp <= [powerRequest:10, factory:"f"]
+service.factory.f <= [powerResponse:5, powerPlant:"pp"]

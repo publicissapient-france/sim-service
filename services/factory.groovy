@@ -1,57 +1,55 @@
-import org.vertx.groovy.platform.Container
-
-import java.util.concurrent.atomic.AtomicInteger
-
 import org.vertx.groovy.core.Vertx
+import org.vertx.groovy.platform.Container
 
 Vertx vx = vertx
 Container dock = container
 
-/**
- * Configuration
- */
 def me = [
         id  : UUID.randomUUID().toString(),
         type: 'factory',
+        name: 'Silly Factory'
 ]
 
 def channels = [
-        output: [
-                status : me.type + '.status',
-                consume: me.type + '.consume',
-                consume: me.type + '.production'
-        ]
+        factory   : 'service.factory',
+        powerPlant: 'service.powerPlant'
 ]
 
 def conf = [
-        powerPerUnit: (dock.config[me.type]?.maxLoad ?: 5).toInteger(),
-        startChannel: 'monitoring.service.start'
+        hbDelay : (dock.config.hbDelay ?: 5000).toLong(),
+        askDelay: (dock.config[me.type]?.askDelay ?: 5000).toInteger(),
+        askLevel: (dock.config[me.type]?.askLevel ?: 5).toInteger()
 ]
 
-/**
- * Debug listeners
- */
-vx.eventBus.registerHandler(channels.output.status) { message ->
-    println "OUTPUT ${channels.output.status} => ${message.body}"
+def powerPlant
+
+// announce me every 5 seconds
+vx.setPeriodic(conf.hbDelay) { timerID -> vx.eventBus.publish(channels.factory, me) }
+
+// Silly, only save last power plant announced
+vx.eventBus.registerHandler(channels.powerPlant) { message ->
+
+    if (message.body.id && message.body.type == 'powerPlant') {
+        powerPlant = message.body
+    }
 }
 
-vx.eventBus.registerHandler(conf.startChannel) { message ->
-    println "OUTPUT ${conf.startChannel} => ${message.body}"
+// Silly, ask for power every x seconds
+vx.setPeriodic(conf.askDelay) { timerID ->
+
+    if (powerPlant) {
+        def request = [powerRequest: conf.askLevel, factory: me.id]
+        vx.eventBus.publish(channels.powerPlant + '.' + powerPlant.id, request)
+    }
 }
 
-vx.eventBus.registerHandler(me.type + 'consume.' + me.id) { message ->
-    println "OUTPUT ${channels.output.status} => ${message.body}"
-}
+// log power responses
+vx.eventBus.registerHandler(channels.factory + '.' + me.id) { message ->
 
-/**
- * Service itself
- */
-def emit = { String busAddress, Map message ->
-    vx.eventBus.publish(busAddress, me + message)
-}
+    if (message.body.powerResponse && message.body.powerPlant) {
 
-emit(conf.startChannel, channels)
+        println "$me.type|$me.id|powerResponse $message.body.powerResponse from $message.body.powerPlant"
 
-vx.setPeriodic(750) { timerID ->
-    emit('power.plant.consume', [replyTo: me.type + 'consume.' + me.id, need: 4])
+        // todo do something with powerResponse ?
+    }
 }
