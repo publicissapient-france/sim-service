@@ -20,7 +20,7 @@ Every factory service announces itself to /city
 
 ```json
 {
-  "action": "hello"
+  "action": "hello",
   "team": "choose your team name and stick to it",
   "id": "unique instance id",
   "type": "factory",
