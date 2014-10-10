@@ -14,9 +14,9 @@ $ ./server.sh
 
 # Streams
 
-## Hello
-
 Every factory service announces itself to /city
+
+* Hello :
 
 ```json
 {
@@ -30,6 +30,8 @@ Every factory service announces itself to /city
 
 Factory emits cereal request to some type of farm (ex: /city/farm/V1)
 
+* Request :
+
 ```json
 {
    "from": "factory id",
@@ -38,7 +40,9 @@ Factory emits cereal request to some type of farm (ex: /city/farm/V1)
 }
 ```
 
-Farm responses to the factory
+Farm reply to the factory
+
+* Response
 
 ```json
 {
@@ -49,25 +53,34 @@ Farm responses to the factory
 }
 ``` 
 
-Factory acquittement to the farm
+Factory reply Acquittement to the farm
+Store reply Acquittement to the factory
+
+* Acquittement :
 
 ```json
 {
     "from": "factory id",
     "action": "acquittement",
-    "quantity": 9
+    "quantity": 9,
+    "cost": 90
 }
 ``` 
 
-Farm send bill to the bank
+Farm send Bill to /city/bank
+Store send Bill to the /city/bank
+* Bill
 
 ```json
 {
-    "action": "bill",
     "from": "farm id",
+    "action": "bill",
     "charge": "factory id",
-    "cost": 1234,
+    "cost": 100,
     "quantity": 9
 }
 ```
+
+
+
 
