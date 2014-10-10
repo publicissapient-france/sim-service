@@ -32,9 +32,9 @@ Factory emits cereal request to some type of farm (ex: /city/farm/V1)
 
 ```json
 {
-    'from' : 'factory id',
-    'action' : 'request',
-    'quantity' : 10
+    'from': 'factory id',
+    'action': 'request',
+    'quantity': 10
 }
 ```
 
