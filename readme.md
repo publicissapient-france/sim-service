@@ -16,37 +16,58 @@ $ ./server.sh
 
 ## Hello
 
-Every service announces itself to /city
+Every factory service announces itself to /city
 
 ```json
 {
-  "group" : "choose your team name and stick to it",
-  "id" : "unique instance id",
-  "type" : "service name",
-  "version" : "instanceVersion"
-}
-
-## PowerPlant
-PowerPlant "pp" receives power request from Factory "f"  
-service.powerPlant.pp <= [powerRequest:10, factory:"f"]
-
-## Factory
-Factory "f" receives power response from PowerPlant "pp"   
-service.factory.f <= [powerResponse:5, powerPlant:"pp"]  
-
-## Bank
-Bank "b" receives power requests and responses from PowerPlant "pp" and factory "f"
-service.powerPlant.pp <= [powerRequest:10, factory:"f"]
-service.factory.f <= [powerResponse:5, powerPlant:"pp"]
-
-# Messages
-hello
-```json
-{
-  "group" : "chooseYourGroupNameAndStickToIt",
-  "id" : "chooseYourGroupNameAndStickToIt-chooseTheInstanceId",
-  "version" : "instanceVersion"
+  'action' : 'hello'
+  'team' : 'choose your team name and stick to it',
+  'id' : 'unique instance id',
+  'type' : 'factory',
+  'version' : 'instanceVersion'
 }
 ```
 
+Factory emits cereal request to some type of farm (ex: /city/farm/V1)
+
+```json
+{
+    'from' : 'factory id',
+    'action' : 'request',
+    'quantity' : 10
+}
+```
+
+Farm responses to the factory
+
+```json
+{
+    'from' : 'farm id',
+    'action' : 'response',
+    'quantity' : 10,
+    'cost' : 100
+}
+``` 
+
+Factory acquittement to the farm
+
+```json
+{
+    'from' : 'factory id',
+    'action' : 'acquittement',
+    'quantity' : 9
+}
+``` 
+
+Farm send bill to the bank
+
+```json
+{
+    'action' : 'bill',
+    'from' : 'farm id',
+    'charge' : 'factory id',
+    'cost' : 1234,
+    'quantity' : 9
+}
+```
 
