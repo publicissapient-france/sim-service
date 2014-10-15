@@ -1,3 +1,3 @@
 #!/bin/sh
 
-vertx run services/main.js -conf main.conf
+vertx run services/main.js -conf services/main.conf
