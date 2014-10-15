@@ -1,3 +1,3 @@
 #!/bin/sh
 
-vertx run main.groovy -conf main.conf
+vertx run services/main.js -conf main.conf

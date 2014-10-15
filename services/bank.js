@@ -1,49 +1,35 @@
-var vertx     = require('vertx');
+var vertx = require('vertx');
 var container = require('vertx/container');
-var console   = require('vertx/console');
-var utils     = require('./utils.js');
+var console = require('vertx/console');
+var utils = require('./utils.js');
 
 var me = {
-    id  : utils.uuid(),
+    id: utils.uuid(),
     type: 'bank',
-    name: 'Evil Bank'
-};
-
-var channels = {
-    bank      : 'service.bank',
-    factory   : 'service.factory',
-    powerPlant: 'service.powerPlant'
+    version: 'evil bank',
+    team: 'masters'
 };
 
 var conf = {
     hbDelay: container.config.hbDelay || 5000
 };
 
-// announce me every 5 seconds
-vertx.setPeriodic(conf.hbDelay, function (timerID) {
-    vertx.eventBus.publish(channels.bank, me)
+var farms = [];
+var factories = [];
+var stores = [];
+
+// listen for service annoucements
+vertx.eventBus.registerHandler('city', function(message) {
+
 });
 
-var powerPlantIds = [];
+// listen for bills
+vertx.eventBus.registerHandler('city.bank', function(message) {
 
-var factoryIds = [];
+    // handle bills
+    var factoryId = message.charge;
 
-// Listen for power plants as they announce themselves
-vertx.eventBus.registerHandler(channels.powerPlant, function (message) {
-    if (message.id && (message.type == 'powerPlant') && (powerPlantIds.indexOf(message.id) < 0)) {
-        powerPlantIds.push(message.id);
-        vertx.eventBus.registerHandler(channels.powerPlant + '.' + message.id, function (powerPlantMessage) {
-            console.log(me.type + "|" + me.id + "|Intercept " + JSON.stringify(powerPlantMessage));
-        });
-    }
-});
-
-// Listen for factories as they announce themselves
-vertx.eventBus.registerHandler(channels.factory, function (message) {
-    if (message.id && (message.type == 'factory') && (factoryIds.indexOf(message.id) < 0)) {
-        factoryIds.push(message.id);
-        vertx.eventBus.registerHandler(channels.factory + '.' + message.id, function (factoryMessage) {
-            console.log(me.type + "|" + me.id + "|Intercept " + JSON.stringify(factoryMessage));
-        });
-    }
+    /*factories[factoryId]["purchases"] += message.quantity
+    factories[factoryId]["sales"] += message.cost
+    factories[factoryId]["stocks"] += message.quantity*/
 });

@@ -22,20 +22,20 @@ Every factory service announces itself to /city
 {
   "action": "hello",
   "team": "choose your team name and stick to it",
-  "id": "unique instance id",
+  "from": "unique instance id",
   "type": "factory",
-  "version": "instanceVersion"
+  "version": "version"
 }
 ```
 
 # Request :
 
-* Factory emits cereal request to some type of farm (ex: /city/farm/V1)
+* Factory emits cereal request to some type of farm (ex: /city/farm)
 
 ```json
 {
-   "from": "factory id",
    "action": "request",
+   "from": "factory id",
    "quantity": 10
 }
 ```
@@ -46,8 +46,8 @@ Every factory service announces itself to /city
 
 ```json
 {
-    "from": "farm id",
     "action": "response",
+    "from": "farm id",
     "quantity": 10,
     "cost": 100
 }
@@ -62,10 +62,9 @@ Every factory service announces itself to /city
 
 ```json
 {
-    "from": "factory id",
     "action": "acquittement",
-    "quantity": 9,
-    "cost": 90
+    "from": "factory id",
+    "quantity": 9
 }
 ``` 
 
@@ -77,11 +76,11 @@ Every factory service announces itself to /city
 
 ```json
 {
-    "from": "farm id",
     "action": "bill",
+    "from": "farm id",
     "charge": "factory id",
-    "cost": 100,
-    "quantity": 9
+    "quantity": 9,
+    "cost": 100
 }
 ```
 
