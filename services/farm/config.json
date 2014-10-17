@@ -1,0 +1,10 @@
+{
+    "adresses": {
+        "city" : "/city",
+        "bank" : "/city/bank",
+        "farm" : "/city/farm"
+    },
+    "maxStock": 30,
+    "frequency": 1000,
+    "cost": 10
+}

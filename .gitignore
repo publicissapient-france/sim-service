@@ -7,3 +7,4 @@ build
 out/
 gradlew
 gradlew.bat
+build.gradle
