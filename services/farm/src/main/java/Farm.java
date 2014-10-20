@@ -67,6 +67,8 @@ public class Farm extends Verticle {
         };
         eventBus.registerHandler(adresses.getString("farm"), myHandler);
 
+        vertx.setPeriodic(config.getInteger("heartBeat"), timerId -> sayHello(eventBus, adresses, id));
+
         long timerID = vertx.setPeriodic(config.getInteger("frequency"), new Handler<Long>() {
             public void handle(Long timerID) {
                 if (stock < config.getInteger("maxStock")) {
@@ -79,12 +81,13 @@ public class Farm extends Verticle {
 
     }
 
-    private void sayHello(EventBus eventBus, JsonObject jsonObject, String id) {
+    private void sayHello(EventBus eventBus, JsonObject adresses, String id) {
+        container.logger().info("Say hello");
         JsonObject hello = new JsonObject();
         hello.putString("action", "hello");
         hello.putString("from", id);
         hello.putString("type", "farm");
         hello.putString("version", "1.0");
-        eventBus.publish(jsonObject.getString("city"), hello);
+        eventBus.publish(adresses.getString("city"), hello);
     }
 }

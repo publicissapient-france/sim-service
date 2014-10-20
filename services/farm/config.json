@@ -9,5 +9,6 @@
     "frequency": 1000,
     "cost": 100,
     "timeoutReply": 1000,
-    "initialStock": 10
+    "initialStock": 10,
+    "heartBeat": 500
 }
