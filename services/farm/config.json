@@ -2,9 +2,12 @@
     "adresses": {
         "city" : "/city",
         "bank" : "/city/bank",
-        "farm" : "/city/farm"
+        "farm" : "/city/farm",
+	"factory" : "/city/factory/"
     },
     "maxStock": 30,
     "frequency": 1000,
-    "cost": 10
+    "cost": 100,
+    "timeoutReply": 1000,
+    "initialStock": 10
 }
