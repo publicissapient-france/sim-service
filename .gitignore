@@ -7,3 +7,6 @@ build
 out/
 gradlew
 gradlew.bat
+build.gradle
+
+terraform/terraform.tfvars
