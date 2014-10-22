@@ -10,11 +10,11 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
-var eb = new vertx.EventBus('http://0.0.0.0:8080/city/monitor');
+var eb = new vertx.EventBus('/city/monitor');
 
 eb.onopen = function () {
 
-    eb.registerHandler('city', function (message) {
+    eb.registerHandler('/city', function (message) {
         console.log('received a message: ' + JSON.stringify(message));
     });
 
