@@ -16,7 +16,7 @@ $ ./server.sh
 
 ## Hello :
 
-Every factory service announces itself to /city
+Every service announces itself to "/city"
 
 ```json
 {

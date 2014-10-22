@@ -10,7 +10,7 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
-var eb = new vertx.EventBus('http://0.0.0.0:8090/eventbus');
+var eb = new vertx.EventBus('http://0.0.0.0:8080/city/monitor');
 
 eb.onopen = function () {
 
