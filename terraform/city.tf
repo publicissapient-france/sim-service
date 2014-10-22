@@ -19,13 +19,13 @@ resource "aws_security_group" "simservice-sg" {
 }
 
 resource "aws_instance" "factory" {
-    count = 0
+    count = 1
     key_name = "insecure-sim-service"
     ami = "ami-f8af0d8f"
     instance_type = "m1.small"
     tags {
         Name = "SimService node#${count.index}"
-        Short = "sim${count.index}"
+        Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
     connection {
@@ -48,6 +48,7 @@ resource "aws_instance" "core" {
     instance_type = "m1.small"
     tags {
         Name = "SimService core"
+        Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
 }
@@ -59,6 +60,7 @@ resource "aws_subnet" "simservice-net" {
   availability_zone = "eu-west-1b"
   tags {
           Name = "SimService subnet"
+          Project = "SimService"
       }
 }
 
