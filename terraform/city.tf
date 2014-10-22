@@ -19,7 +19,7 @@ resource "aws_security_group" "simservice-sg" {
 }
 
 resource "aws_instance" "factory" {
-    count = 1
+    count = 0
     key_name = "insecure-sim-service"
     ami = "ami-f8af0d8f"
     instance_type = "m1.small"
@@ -36,7 +36,7 @@ resource "aws_instance" "factory" {
     provisioner "remote-exec" {
         inline = [
         "sudo apt-get -y update",
-        "sudo apt-get -y install git",
+        "sudo apt-get -y install openjdk-7-jdk",
         ]
     }
 
@@ -65,9 +65,6 @@ resource "aws_subnet" "simservice-net" {
 }
 
 # DNS
-resource "aws_route53_zone" "primary" {
-   name = "auffredou.fr"
-}
 
 variable "domains" {
     default = {
@@ -78,12 +75,12 @@ variable "domains" {
     }
 }
 
-#resource "aws_route53_record" "factory-record" {
+resource "aws_route53_record" "factory-record" {
 #    count = 3
 #    zone_id = "${aws_route53_zone.primary.zone_id}"
-#    zone_id = "Z28O5PDK1WPCSR"
-#    name = "${lookup(var.domains,count.index)}"
-#    type = "A"
-#    ttl = "300"
-#    records = ["${aws_instance.factory.${count.index}.public_ip}"]
-#}
+    zone_id = "Z28O5PDK1WPCSR"
+    name = "sim-core.aws.xebiatechevent.info"
+    type = "A"
+    ttl = "300"
+    records = ["${aws_instance.core.public_ip}"]
+}

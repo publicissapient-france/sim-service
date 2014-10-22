@@ -85,5 +85,51 @@ Every factory service announces itself to /city
 ```
 
 
+# Webstream
+
+## City buildings
+
+```json
+{
+    "event": {
+        "action": "init",
+        "buildings": [
+            {
+                "type": "factory",
+                "team": "team 1",
+                "id": "f01",
+                "version": "1.0",
+                "score": 420
+            },
+            {
+                "type": "factory",
+                "team": "team 2",
+                "id": "f11",
+                "version": "1.0",
+                "score": 333
+            },
+            {
+                "type": "factory",
+                "team": "team 2",
+                "id": "a8da7965-6eb4-4e1c-825d-181b15c688c5",
+                "version": "1.0",
+                "score": 777
+            },
+            {
+                "type": "farm",
+                "id": "893a6820-f010-46f2-9084-a26596dd7daf",
+                "version": "1.0",
+            },
+            {
+                "type": "farm",
+                "id": "ad20e4d2-e156-45c1-be46-f5b69b408828",
+                "version": "1.0",
+            }
+        ]
+    }
+}
+```
+
+
 
 

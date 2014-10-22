@@ -10,7 +10,20 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
+var eb = new vertx.EventBus('http://0.0.0.0:8090/eventbus');
+
+eb.onopen = function () {
+
+    eb.registerHandler('city', function (message) {
+        console.log('received a message: ' + JSON.stringify(message));
+    });
+
+    eb.send('some-address', {name: 'tim', age: 587});
+
+};
+
 window.onload = function () {
+
 
     var ladder = $('#ladder').find('#teams');
 
@@ -25,19 +38,20 @@ window.onload = function () {
 
     city.onReady = function () {
 
-        wsocket = new WebSocket(serviceLocation);
-        wsocket.onmessage = function(message){
-            var data = JSON.parse(message.data);
-            var event = data.event;
-            console.log("Received "+event.type);
+//        wsocket = new WebSocket(serviceLocation);
+//        wsocket.onmessage = function (message) {
+//            var data = JSON.parse(message.data);
+//            var event = data.event;
+//            console.log("Received " + event.type);
+//
+//            switch (event.type) {
+//                case "init":
+//                    console.log(event);
+//                    city.initModel(event);
+//                    break;
+//            }
+//        };
 
-            switch (event.type){
-                case "init":
-                    console.log(event);
-                    city.initModel(event);
-                    break;
-            }
-        };
         updateUi();
     };
 
@@ -63,10 +77,9 @@ window.onload = function () {
     };
 
 
-
 };
 
-function updateUi(){
+function updateUi() {
     requestAnimationFrame(updateUi);
     city.redraw();
 }
