@@ -1,0 +1,14 @@
+{
+    "adresses": {
+        "city" : "/city",
+        "bank" : "/city/bank",
+        "farm" : "/city/farm",
+	"factory" : "/city/factory/"
+    },
+    "maxStock": 30,
+    "frequency": 200,
+    "cost": 100,
+    "timeoutReply": 1000,
+    "initialStock": 10,
+    "heartBeat": 500
+}
