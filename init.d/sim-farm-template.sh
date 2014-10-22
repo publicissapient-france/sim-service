@@ -11,9 +11,9 @@ INSTANCE=$(echo  $BASENAME | cut -d"-" -f1 )
 CONF=$(echo  $BASENAME | cut -d"-" -f2 )
 
 DAEMON=vertx
-DAEMONOPTS=" run src/main/java/Farm.java -conf $CONF.json -cluster"
+DAEMONOPTS=" run src/main/java/Farm.java -conf config-$CONF.json"
 
-NAME=sim-$INSTANCE-$CONF
+NAME=$INSTANCE-$CONF
 DESC="simservice farm daemon"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
