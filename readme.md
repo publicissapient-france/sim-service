@@ -4,19 +4,11 @@ $ brew install gradle (optionnal)
 $ brew install groovy (optionnal)  
 $ brew install vert.x  
 
-# Getting started
-
-## Start services
-$ ./services.sh
-
-## Start server
-$ ./server.sh
-
 # Streams
 
 ## Hello :
 
-Every service announces itself to "/city"
+* Service periodically announces itself to "/city"
 
 ```json
 {
@@ -30,8 +22,8 @@ Every service announces itself to "/city"
 
 # Request :
 
-* Factory emits cereal request to "/city/farm"
-* Store emits beer request to "/city/factory"
+* Factory emits Request to "/city/farm"
+* Store emits Request to "/city/factory"
 
 ```json
 {
@@ -90,25 +82,43 @@ Every service announces itself to "/city"
 
 * Bank sends Purchase info to "/city/factory/id"
 * Bank sends Sale info to "/city/factory/id"
+* Bank sends Cost info to "/city/factory/id"
 
 
 ```json
 {
-    "action": "purchase|sale",
+    "action": "purchase|sale|cost",
     "from": "bank",
     "quantity": 9,
     "cost": 100
 }
 ```
 
-## Metrics :
+## Data, Up, Down :
 
-* Bank sends metrics to "/city/monitor"
+* Bank sends Data to "/city/monitor"
 
 ```json
-{}
+{
+    "action": "data",
+    "from": "bank",
+    "service": 9,
+    "purchases": 100,
+    "sales": 100,
+    "costs": 100,
+    "stocks": 100
+}
 ```
 
+* Bank sends Up and Down to "/city/monitor"
+
+```json
+{
+    "action": "up|down",
+    "from": "bank",
+    "service": 9
+}
+```
 
 
 

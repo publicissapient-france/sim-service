@@ -3,53 +3,75 @@ var container = require('vertx/container');
 var console = require('vertx/console');
 var utils = require('./utils.js');
 
-var me = {
-    id: utils.uuid(),
+var conf = {
+    id: 'bank',
     type: 'bank',
     version: 'evil bank',
-    team: 'masters'
+    team: 'masters',
+    delay: container.config.delay || 5000,
+    downDelay: container.config.downDelay || 15000,
+    stockThreshold: container.config.stockThreshold || 100,
+    stockDebitCost: container.config.stockDebitCost || 5,
+    stockCreditCost: container.config.stockCreditCost || 2,
 };
 
-var conf = {
-    hbDelay: container.config.hbDelay || 5000
-};
-
+/* Structure : services['farm|factory|store']['1234...'] {
+    alive:true,
+    lastAlive=10h10...,
+    team:'masters',
+    purchases:10,
+    sales:20,
+    costs:4,
+    stocks:5,
+    lastStocks:0
+}*/
 var services = {};
 
 // listen for service hello messages
 vertx.eventBus.registerHandler('/city', function(message) {
 
-    if (message.type && message.from && message.team) {
+    var action = message.action;
+    var serviceTeam = message.team;
+    var serviceType = message.type;
+    var serviceId = message.from;
 
-        if (!services[message.type]) {
+    if ('hello' == action && serviceTeam && serviceType && serviceId) {
+
+        if (!services[serviceType]) {
             // initialize object for type of service
-            services[message.type] = {};
+            services[serviceType] = {};
         }
 
-        if (!services[message.type].[message.from]) {
+        if (!services[serviceType][serviceId]) {
             // initialize object for service
-            services[message.type].[message.from] = {};
+            services[serviceType][serviceId] = {
+                team: serviceTeam,
+                purchases: 0,
+                sales: 0,
+                costs: 0,
+                stocks: 0,
+                lastStocks: 0
+            };
         }
 
-        services[message.type].[message.from].alive = new Date();
-        services[message.type].[message.from].team = message.team;
+        services[serviceType][serviceId].lastAlive = new Date();
     }
 });
 
-// watch for services up or down
-vertx.setPeriodic(conf.hbDelay, function (timerID) {
+// periodically watch for services as they become up or down
+vertx.setPeriodic(conf.delay, function (timerID) {
 
-    var minAlive = new Date() - (5 * conf.hbDelay);
+    var minLastAlive = new Date() - conf.downDelay;
 
     for (var type in services) {
         for (var id in services[type]) {
 
             var service = services[type][id];
-            var alive = service.alive < minAlive;
+            var aliveNow = service.lastAlive < minLastAlive;
 
-            if (alive && !service.status) {
+            if (aliveNow && !service.alive) {
 
-                service.status = true;
+                service.alive = true;
 
                 // send up
                 vertx.eventBus.send('/city/monitor', {
@@ -57,11 +79,10 @@ vertx.setPeriodic(conf.hbDelay, function (timerID) {
                     from    : me.id,
                     service : id
                 });
-            }
 
-            if (!alive && !service.down) {
+            } else if (!aliveNow && service.alive) {
 
-                service.status = false;
+                service.alive = false;
 
                 // send down
                 vertx.eventBus.send('/city/monitor', {
@@ -74,13 +95,82 @@ vertx.setPeriodic(conf.hbDelay, function (timerID) {
     }
 });
 
-// listen for bills
+// listen for factory purchase and store sale bills
 vertx.eventBus.registerHandler('/city/bank', function(message) {
 
-    // handle bills
+    var action = message.action;
     var factoryId = message.charge;
+    var quantity = message.quantity;
+    var cost = message.cost;
 
-    /*factories[factoryId]["purchases"] += message.quantity
-    factories[factoryId]["sales"] += message.cost
-    factories[factoryId]["stocks"] += message.quantity*/
+    if (factoryId && quantity && cost) {
+
+        var factory = services['factory'][factoryId];
+        if (!factory) {
+            console.warn('Unknown factory received for bill: ' + factoryId);
+            return;
+        }
+
+        if ('purchase' == action) {
+            factory.stocks += quantity;
+            factory.purchases += cost;
+        } else if ('sale' == action) {
+            factory.stocks -= quantity;
+            factory.sales += cost;
+        } else {
+            console.warn('Unknown action received for bill: ' + action);
+            return;
+        }
+
+        // send purchase or sale infos
+        vertx.eventBus.send('/city/factory/' + factoryId, {
+            action: action,
+            from: conf.id,
+            quantity: quantity,
+            cost: cost
+        });
+    }
+});
+
+// periodically update and send metrics to monitor service
+vertx.setPeriodic(conf.delay, function (timerID) {
+
+    for (var type in services) {
+        for (var id in services[type]) {
+
+            var service = services[type][id];
+
+            // update costs as service has credit or debit stocks
+            var deltaStocks = service.lastStocks - service.stocks;
+            var stockCosts = 0;
+            if (deltaStocks > conf.stockThreshold) {
+                stockCosts = conf.stockCreditCost * deltaStocks;
+            } else if (deltaStocks < -conf.stockThreshold) {
+                stockCosts = conf.stockDebitCost * deltaStocks;
+            }
+            service.costs += stockCosts;
+            service.lastStocks = service.stocks;
+
+            if (stockCosts != 0) {
+                // send stock cost
+                vertx.eventBus.send('/city/factory/' + id, {
+                    action: 'cost',
+                    from: me.id,
+                    quantity: deltaStocks,
+                    cost: stockCosts
+                });
+            }
+
+            // send data
+            vertx.eventBus.send('/city/monitor', {
+                action: 'data',
+                from: me.id,
+                service: id,
+                purchases: service.purchases,
+                sales: service.sales,
+                costs: service.costs,
+                stocks: service.stocks
+            });
+        }
+    }
 });

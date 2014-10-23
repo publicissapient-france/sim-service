@@ -69,12 +69,10 @@ public class Farm extends Verticle {
 
         vertx.setPeriodic(config.getInteger("heartBeat"), timerId -> sayHello(eventBus, adresses, id));
 
-        long timerID = vertx.setPeriodic(config.getInteger("frequency"), new Handler<Long>() {
-            public void handle(Long timerID) {
-                if (stock < config.getInteger("maxStock")) {
-                    stock++;
-                    container.logger().info("New stock=" + stock);
-                }
+        vertx.setPeriodic(config.getInteger("frequency"), timerID1 -> {
+            if (stock < config.getInteger("maxStock")) {
+                stock++;
+                container.logger().info("New stock=" + stock);
             }
         });
 

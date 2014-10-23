@@ -1,0 +1,7 @@
+{
+    "delay" : 5000,
+    "downDelay" : 15000,
+    "stockThreshold" : 100,
+    "stockDebitCost" : 5,
+    "stockCreditCost" : 2
+}
