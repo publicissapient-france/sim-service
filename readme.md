@@ -30,7 +30,8 @@ Every service announces itself to "/city"
 
 # Request :
 
-* Factory emits cereal request to some type of farm (ex: /city/farm)
+* Factory emits cereal request to "/city/farm"
+* Store emits beer request to "/city/factory"
 
 ```json
 {
@@ -42,7 +43,8 @@ Every service announces itself to "/city"
 
 ## Response :
 
-* Farm reply to the factory
+* Farm sends Response with timeout to "/city/factory/id"
+* Factory sends Response with timeout to "/city/store/id"
 
 ```json
 {
@@ -55,8 +57,8 @@ Every service announces itself to "/city"
 
 ## Acquittement :
 
-* Factory reply Acquittement to the farm
-* Store reply Acquittement to the factory
+* Factory replies Acquittement to the farm
+* Store replies Acquittement to the factory
 
 
 
@@ -68,15 +70,15 @@ Every service announces itself to "/city"
 }
 ``` 
 
-## Bill
+## Purchase and Sale bills :
 
-* Farm send Bill to /city/bank
-* Store send Bill to the /city/bank
+* Farm sends Purchase bill to "/city/bank"
+* Store sends Sale bill to the "/city/bank"
 
 
 ```json
 {
-    "action": "bill",
+    "action": "purchase|sale",
     "from": "farm id",
     "charge": "factory id",
     "quantity": 9,
@@ -84,50 +86,27 @@ Every service announces itself to "/city"
 }
 ```
 
+## Info
 
-# Webstream
+* Bank sends Purchase info to "/city/factory/id"
+* Bank sends Sale info to "/city/factory/id"
 
-## City buildings
 
 ```json
 {
-    "event": {
-        "action": "init",
-        "buildings": [
-            {
-                "type": "factory",
-                "team": "team 1",
-                "id": "f01",
-                "version": "1.0",
-                "score": 420
-            },
-            {
-                "type": "factory",
-                "team": "team 2",
-                "id": "f11",
-                "version": "1.0",
-                "score": 333
-            },
-            {
-                "type": "factory",
-                "team": "team 2",
-                "id": "a8da7965-6eb4-4e1c-825d-181b15c688c5",
-                "version": "1.0",
-                "score": 777
-            },
-            {
-                "type": "farm",
-                "id": "893a6820-f010-46f2-9084-a26596dd7daf",
-                "version": "1.0",
-            },
-            {
-                "type": "farm",
-                "id": "ad20e4d2-e156-45c1-be46-f5b69b408828",
-                "version": "1.0",
-            }
-        ]
-    }
+    "action": "purchase|sale",
+    "from": "bank",
+    "quantity": 9,
+    "cost": 100
 }
+```
+
+## Metrics :
+
+* Bank sends metrics to "/city/monitor"
+
+```json
+{}
 ```
 
 
