@@ -132,7 +132,7 @@ vertx.eventBus.registerHandler('/city/bank', function(message) {
     }
 });
 
-// periodically update and send metrics to monitor service
+// periodically update and send data to monitor service
 vertx.setPeriodic(conf.delay, function (timerID) {
 
     for (var type in services) {

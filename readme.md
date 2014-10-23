@@ -119,6 +119,3 @@ $ brew install vert.x
     "service": 9
 }
 ```
-
-
-
