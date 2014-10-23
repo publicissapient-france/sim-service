@@ -78,7 +78,7 @@ $ brew install vert.x
 }
 ```
 
-## Info
+## Purchase, Sale and Cost infos :
 
 * Bank sends Purchase info to "/city/factory/id"
 * Bank sends Sale info to "/city/factory/id"
@@ -94,7 +94,7 @@ $ brew install vert.x
 }
 ```
 
-## Data, Up, Down :
+## Data, Up and Down metrics :
 
 * Bank sends Data to "/city/monitor"
 
