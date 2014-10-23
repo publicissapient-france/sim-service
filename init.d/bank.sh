@@ -9,7 +9,7 @@ DAEMON_PATH="/home/ubuntu/sim-service/services/bank"
 DAEMON=vertx
 DAEMONOPTS=" run bank.js"
 
-NAME=sim-monitor
+NAME=sim-bank
 DESC="simservice bank daemon"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
