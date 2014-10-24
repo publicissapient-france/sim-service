@@ -47,7 +47,7 @@ public class Farm extends Verticle {
                     if (response.succeeded()) {
                         container.logger().info("Received reply for an offer");
                         JsonObject bill = new JsonObject();
-                        bill.putString("action", "bill");
+                        bill.putString("action", "purchase");
                         bill.putString("from", id);
                         bill.putString("charge", response.result().body().getString("from"));
                         bill.putNumber("quantity", availableQuantity);
