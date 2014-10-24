@@ -29,7 +29,7 @@ $ brew install vert.x
 {
    "action": "request",
    "from": "factory id",
-   "quantity": 10
+   "quantity": 10,
    "cost" : 1000 // for stores
 }
 ```
