@@ -10,8 +10,9 @@ var conf = {
     team: 'masters',
     delay: container.config.delay || 5000,
     downDelay: container.config.downDelay || 15000,
-    stockThreshold: container.config.stockThreshold || 100,
+    stockDebitThreshold: container.config.stockDebitThreshold || -10,
     stockDebitCost: container.config.stockDebitCost || 5,
+    stockCreditThreshold: container.config.stockCreditThreshold || 100,
     stockCreditCost: container.config.stockCreditCost || 2,
 };
 
@@ -22,8 +23,7 @@ var conf = {
     purchases:10,
     sales:20,
     costs:4,
-    stocks:5,
-    lastStocks:0
+    stocks:5
 }*/
 var services = {};
 
@@ -49,8 +49,7 @@ vertx.eventBus.registerHandler('/city', function(message) {
                 purchases: 0,
                 sales: 0,
                 costs: 0,
-                stocks: 0,
-                lastStocks: 0
+                stocks: 0
             };
         }
 
@@ -135,42 +134,38 @@ vertx.eventBus.registerHandler('/city/bank', function(message) {
 // periodically update and send data to monitor service
 vertx.setPeriodic(conf.delay, function (timerID) {
 
-    for (var type in services) {
-        for (var id in services[type]) {
+    for (var id in services['factory']) {
 
-            var service = services[type][id];
+        var service = services['factory'][id];
 
-            // update costs as service has credit or debit stocks
-            var deltaStocks = service.lastStocks - service.stocks;
-            var stockCosts = 0;
-            if (deltaStocks > conf.stockThreshold) {
-                stockCosts = conf.stockCreditCost * deltaStocks;
-            } else if (deltaStocks < -conf.stockThreshold) {
-                stockCosts = conf.stockDebitCost * deltaStocks;
-            }
-            service.costs += stockCosts;
-            service.lastStocks = service.stocks;
+        // update costs as service has credit or debit stocks
+        var stockCosts = 0;
+        if (service.stocks > conf.stockCreditThreshold) {
+            stockCosts = conf.stockCreditCost * Math.abs(service.stocks);
+        } else if (service.stocks < conf.stockDebitThreshold) {
+            stockCosts = conf.stockDebitCost * Math.abs(service.stocks);
+        }
+        service.costs += stockCosts;
 
-            if (stockCosts != 0) {
-                // send stock cost
-                vertx.eventBus.send('/city/factory/' + id, {
-                    action: 'cost',
-                    from: me.id,
-                    quantity: deltaStocks,
-                    cost: stockCosts
-                });
-            }
-
-            // send data
-            vertx.eventBus.send('/city/monitor', {
-                action: 'data',
+        if (stockCosts != 0) {
+            // send stock cost
+            vertx.eventBus.send('/city/factory/' + id, {
+                action: 'cost',
                 from: me.id,
-                service: id,
-                purchases: service.purchases,
-                sales: service.sales,
-                costs: service.costs,
-                stocks: service.stocks
+                quantity: service.stocks,
+                cost: stockCosts
             });
         }
+
+        // send data
+        vertx.eventBus.send('/city/monitor', {
+            action: 'data',
+            from: me.id,
+            service: id,
+            purchases: service.purchases,
+            sales: service.sales,
+            costs: service.costs,
+            stocks: service.stocks
+        });
     }
 });
