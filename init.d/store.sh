@@ -1,20 +1,16 @@
 #!/bin/bash
 # myapp daemon
 # chkconfig: 345 20 80
-# description: simservice farm daemon
-# processname: sim-farm
+# description: simservice store daemon
+# processname: sim-store
 
-DAEMON_PATH="/home/ubuntu/sim-service/services/farm"
-
-BASENAME=$(basename $0)
-INSTANCE=$(echo  $BASENAME | cut -d"-" -f1 )
-CONF=$(echo  $BASENAME | cut -d"-" -f2 )
+DAEMON_PATH="/home/ubuntu/sim-service/services/store"
 
 DAEMON=vertx
-DAEMONOPTS=" run src/main/java/Farm.java -conf config-$CONF.json -cluster"
+DAEMONOPTS=" run src/main/java/fr/xebia/vertx/store/StoreVerticle.java -conf store.json -cluster"
 
-NAME=$INSTANCE-$CONF
-DESC="simservice farm daemon"
+NAME=sim-store
+DESC="simservice store daemon"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 

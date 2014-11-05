@@ -10,16 +10,13 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
-var eb = new vertx.EventBus('/city/monitor');
+var eb = new vertx.EventBus('http://54.77.63.200:8080/eventbus');
 
 eb.onopen = function () {
-
-    eb.registerHandler('/city', function (message) {
+    console.log("open");
+    eb.registerHandler('/city/monitor', function (message) {
         console.log('received a message: ' + JSON.stringify(message));
     });
-
-    eb.send('some-address', {name: 'tim', age: 587});
-
 };
 
 window.onload = function () {

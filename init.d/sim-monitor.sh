@@ -7,7 +7,7 @@
 DAEMON_PATH="/home/ubuntu/sim-service/services/sim-monitor"
 
 DAEMON=vertx
-DAEMONOPTS=" run sim-monitor.js -conf sim-monitor.conf"
+DAEMONOPTS=" run sim-monitor.js -conf sim-monitor.conf -cluster"
 
 NAME=sim-monitor
 DESC="simservice monitor daemon"

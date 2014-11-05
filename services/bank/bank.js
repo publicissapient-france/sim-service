@@ -13,22 +13,22 @@ var conf = {
     stockDebitThreshold: container.config.stockDebitThreshold || -10,
     stockDebitCost: container.config.stockDebitCost || 5,
     stockCreditThreshold: container.config.stockCreditThreshold || 100,
-    stockCreditCost: container.config.stockCreditCost || 2,
+    stockCreditCost: container.config.stockCreditCost || 2
 };
 
 /* Structure : services['farm|factory|store']['1234...'] {
-    alive:true,
-    lastAlive=10h10...,
-    team:'masters',
-    purchases:10,
-    sales:20,
-    costs:4,
-    stocks:5
-}*/
-var services = {};
+ alive:true,
+ lastAlive=10h10...,
+ team:'masters',
+ purchases:10,
+ sales:20,
+ costs:4,
+ stocks:5
+ }*/
+var services = {};
 
 // listen for service hello messages
-vertx.eventBus.registerHandler('/city', function(message) {
+vertx.eventBus.registerHandler('/city', function (message) {
 
     var action = message.action;
     var serviceTeam = message.team;
@@ -53,41 +53,37 @@ vertx.eventBus.registerHandler('/city', function(message) {
             };
         }
 
-        services[serviceType][serviceId].lastAlive = new Date();
+        services[serviceType][serviceId].lastAlive = new Date().getTime();
     }
 });
 
 // periodically watch for services as they become up or down
 vertx.setPeriodic(conf.delay, function (timerID) {
 
-    var minLastAlive = new Date() - conf.downDelay;
+    var minLastAlive = new Date().getTime() - conf.downDelay;
 
     for (var type in services) {
         for (var id in services[type]) {
 
             var service = services[type][id];
-            var aliveNow = service.lastAlive < minLastAlive;
+            var aliveNow = service.lastAlive > minLastAlive;
 
             if (aliveNow && !service.alive) {
-
                 service.alive = true;
 
                 // send up
                 vertx.eventBus.send('/city/monitor', {
-                    action  : 'up',
-                    from    : me.id,
-                    service : id
+                    action: 'up',
+                    from: conf.id,
+                    service: id
                 });
-
             } else if (!aliveNow && service.alive) {
-
                 service.alive = false;
-
                 // send down
                 vertx.eventBus.send('/city/monitor', {
-                    action  : 'down',
-                    from    : me.id,
-                    service : id
+                    action: 'down',
+                    from: conf.id,
+                    service: id
                 });
             }
         }
@@ -95,7 +91,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
 });
 
 // listen for factory purchase and store sale bills
-vertx.eventBus.registerHandler('/city/bank', function(message) {
+vertx.eventBus.registerHandler('/city/bank', function (message) {
 
     var action = message.action;
     var factoryId = message.charge;
@@ -160,12 +156,31 @@ vertx.setPeriodic(conf.delay, function (timerID) {
         // send data
         vertx.eventBus.send('/city/monitor', {
             action: 'data',
-            from: me.id,
+            from: conf.id,
             service: id,
             purchases: service.purchases,
             sales: service.sales,
             costs: service.costs,
             stocks: service.stocks
         });
+    }
+});
+
+vertx.setPeriodic(conf.delay, function (timerID) {
+
+    var minLastAlive = new Date().getTime() - conf.downDelay;
+    for (var type in services) {
+        for (var id in services[type]) {
+            var service = services[type][id];
+            var aliveNow = service.lastAlive > minLastAlive;
+
+            // send up
+            vertx.eventBus.send('/city/monitor', {
+                action: aliveNow ? 'up' : 'down',
+                from: conf.id,
+                service: id
+            });
+
+        }
     }
 });

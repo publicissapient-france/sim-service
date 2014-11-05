@@ -7,7 +7,7 @@
 DAEMON_PATH="/home/ubuntu/sim-service/services/bank"
 
 DAEMON=vertx
-DAEMONOPTS=" run bank.js"
+DAEMONOPTS=" run bank.js  -cluster"
 
 NAME=sim-bank
 DESC="simservice bank daemon"
