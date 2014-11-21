@@ -1,5 +1,5 @@
-mods
-.idea/
+.gradle
+mods.idea/
 *.iml
 .gradle
 gradle
