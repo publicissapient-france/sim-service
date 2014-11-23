@@ -30,8 +30,8 @@ function Team(name) {
     this.factories = [];
     this.color = null;
     this.getId = function () {
-        return this.name.replace(" ", "")
-    }
+        return this.name.replace(" ", "");
+    };
 }
 
 function Factory(id) {

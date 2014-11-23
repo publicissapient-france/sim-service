@@ -70,7 +70,7 @@ window.onload = function () {
         t.append('<div class="logo" style="background-color: ' + team.color + '">');
         t.append('<div class="label" >' + team.name + '</div>');
         t.append('<div class="score" >0</div>');
-        ladder.append(t)
+        ladder.append(t);
     };
 
 
