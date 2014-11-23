@@ -1,5 +1,6 @@
 .gradle
 mods.idea/
+*.pid
 *.iml
 .gradle
 gradle
