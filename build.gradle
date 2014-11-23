@@ -1,12 +1,16 @@
-apply plugin: 'groovy'
+allprojects {
 
-repositories {
-    mavenCentral()
-}
+    apply plugin: 'java'
 
-dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.1'
-    compile "io.vertx:vertx-core:2.1RC3"
-    compile "io.vertx:vertx-platform:2.1RC3"
-    compile "io.vertx:lang-groovy:2.1RC3"
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile 'org.codehaus.groovy:groovy-all:2.3.1'
+        compile "io.vertx:vertx-core:2.1.5"
+        compile "io.vertx:vertx-platform:2.1.5"
+        compile "io.vertx:lang-groovy:2.1.1"
+        testCompile "io.vertx:testtools:2.0.3-final"
+    }
 }
