@@ -9,3 +9,5 @@ gradlew
 gradlew.bat
 
 terraform/terraform.tfvars
+
+terraform/terraform.tfstate*
