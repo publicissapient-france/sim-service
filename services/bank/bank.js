@@ -1,7 +1,6 @@
 var vertx = require('vertx');
 var container = require('vertx/container');
 var console = require('vertx/console');
-var utils = require('./utils.js');
 
 var conf = {
     id: 'bank',
@@ -16,15 +15,19 @@ var conf = {
     stockCreditCost: container.config.stockCreditCost || 2
 };
 
-/* Structure : services['farm|factory|store']['1234...'] {
- alive:true,
- lastAlive=10h10...,
- team:'masters',
- purchases:10,
- sales:20,
- costs:4,
- stocks:5
- }*/
+/*
+    Structure : services['farm|factory|store']['1234...'] {
+      alive:true,
+      lastAlive=2351312...,
+      team:'masters',
+      purchases:10,
+      sales:20,
+      costs:4,
+      stocks:5,
+      overStocks:5,
+      underStocks:5
+ }
+ */
 var services = {};
 
 // listen for service hello messages
@@ -70,7 +73,6 @@ vertx.setPeriodic(conf.delay, function (timerID) {
 
             if (aliveNow && !service.alive) {
                 service.alive = true;
-
                 // send up
                 vertx.eventBus.send('/city/monitor', {
                     action: 'up',
@@ -100,7 +102,7 @@ vertx.eventBus.registerHandler('/city/bank', function (message) {
 
     if (factoryId && quantity && cost) {
 
-        var factory = services['factory'][factoryId];
+        var factory = services.factory[factoryId];
         if (!factory) {
             console.warn('Unknown factory received for bill: ' + factoryId);
             return;
@@ -130,9 +132,9 @@ vertx.eventBus.registerHandler('/city/bank', function (message) {
 // periodically update and send data to monitor service
 vertx.setPeriodic(conf.delay, function (timerID) {
 
-    for (var id in services['factory']) {
+    for (var id in services.factory) {
 
-        var service = services['factory'][id];
+        var service = services.factory[id];
 
         // update costs as service has credit or debit stocks
         var stockCosts = 0;
@@ -143,7 +145,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
         }
         service.costs += stockCosts;
 
-        if (stockCosts != 0) {
+        if (stockCosts !== 0) {
             // send stock cost
             vertx.eventBus.send('/city/factory/' + id, {
                 action: 'cost',
@@ -174,13 +176,12 @@ vertx.setPeriodic(conf.delay, function (timerID) {
             var service = services[type][id];
             var aliveNow = service.lastAlive > minLastAlive;
 
-            // send up
+            // send status
             vertx.eventBus.send('/city/monitor', {
                 action: aliveNow ? 'up' : 'down',
                 from: conf.id,
                 service: id
             });
-
         }
     }
 });
