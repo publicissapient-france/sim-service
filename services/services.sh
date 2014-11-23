@@ -34,7 +34,7 @@ logs() {
 
 case "${action}" in
     remote-*)
-        rsync -az . "${username}@${hostname}:services" && ssh "${username}@${hostname}" "services/services.sh ${action#remote-} ${module} ${config}"
+        rsync -az "${dirname}" "${username}@${hostname}:services" && ssh "${username}@${hostname}" "services/services.sh ${action#remote-} ${module} ${config}"
         exit "${?}" ;; # if action is remotely-executed the script must stop
     start )
         running && echo "${config} is still running" || start ;;
