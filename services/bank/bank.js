@@ -39,6 +39,7 @@ vertx.eventBus.registerHandler('/city', function (message) {
     var serviceId = message.from;
 
     if ('hello' == action && serviceTeam && serviceType && serviceId) {
+        var now = new Date().getTime();
 
         if (!services[serviceType]) {
             // initialize object for type of service
@@ -54,9 +55,27 @@ vertx.eventBus.registerHandler('/city', function (message) {
                 costs: 0,
                 stocks: 0
             };
-        }
 
-        services[serviceType][serviceId].lastAlive = new Date().getTime();
+
+        }
+        services[serviceType][serviceId].lastAlive = now;
+    } else if ('inventoryRequest' == action) {
+        var inventory = [];
+        for (var type in services) {
+            for (var id in services[type]) {
+                var service = services[type][id];
+                if (service.alive) {
+                    service.id = id;
+                    service.type = type;
+                    inventory.push(service);
+                }
+            }
+        }
+        vertx.eventBus.send('/city/monitor/' + serviceId, {
+            action: 'inventoryResponse',
+            from: conf.id,
+            services: inventory
+        });
     }
 });
 
@@ -77,7 +96,9 @@ vertx.setPeriodic(conf.delay, function (timerID) {
                 vertx.eventBus.send('/city/monitor', {
                     action: 'up',
                     from: conf.id,
-                    service: id
+                    service: service.id,
+                    type:service.type,
+                    team:service.team
                 });
             } else if (!aliveNow && service.alive) {
                 service.alive = false;
@@ -85,7 +106,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
                 vertx.eventBus.send('/city/monitor', {
                     action: 'down',
                     from: conf.id,
-                    service: id
+                    service: service.id
                 });
             }
         }

@@ -1,1 +1,1 @@
-include 'services/factory', 'services/farm', 'services/store'
+include 'services/factory', 'services/farm', 'services/store', 'services/monitor', 'services/bank'

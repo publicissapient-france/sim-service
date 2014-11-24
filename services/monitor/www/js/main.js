@@ -1,6 +1,11 @@
 var city;
-var serviceLocation = "ws://0.0.0.0:8090/";
-var wsocket;
+var conf = {
+    id: 'monitor-' + UUID(),
+    type: 'monitor',
+    version: '1.0',
+    team: 'masters'
+};
+
 function createContext(element, city) {
     var context = element.getContext('2d');
 //    context.canvas.width = window.innerWidth;
@@ -10,46 +15,61 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
-var eb = new vertx.EventBus('http://54.77.63.200:8080/eventbus');
+var host = location.host;
+if (location.hostname == 'localhost') {
+    host = "54.77.63.200:8080";
+}
 
+var eb = new vertx.EventBus('http://' + host + '/eventbus');
+
+function log(message) {
+    eventContainer.prepend('<div>' + message + '</div>');
+    if (eventContainer.children().size() > 10) {
+        eventContainer.children().last().remove();
+    }
+}
 eb.onopen = function () {
-    console.log("open");
     eb.registerHandler('/city/monitor', function (message) {
-        console.log('received a message: ' + JSON.stringify(message));
+        city.addBuilding(message);
+    });
+
+    eb.registerHandler('/city/monitor/' + conf.id, function (message) {
+        console.log(message);
+        city.initModel(message.services);
+    });
+
+    eb.registerHandler('/city/factory', function (message) {
+        city.onEvent("Store " + message.from + " requested " + message.quantity, message);
     });
 };
 
+setInterval(sendHello, 2000);
+
+function getHour() {
+    var date = new Date();
+    return date.getHours() + ":" + padLeft(date.getMinutes()) + ":" + padLeft(date.getSeconds());
+}
+function padLeft(number) {
+    return ( number < 10 ? "0" : "" ) + number;
+}
 window.onload = function () {
 
 
     var ladder = $('#ladder').find('#teams');
-
+    eventContainer = $('#events');
     city = new City(30);
 
     var element = document.getElementById('city_canvas');
-
-    console.log(element);
     city.context = createContext(element, city);
     element = document.getElementById('animation_canvas');
     city.animationContext = createContext(element, city);
 
     city.onReady = function () {
-
-//        wsocket = new WebSocket(serviceLocation);
-//        wsocket.onmessage = function (message) {
-//            var data = JSON.parse(message.data);
-//            var event = data.event;
-//            console.log("Received " + event.type);
-//
-//            switch (event.type) {
-//                case "init":
-//                    console.log(event);
-//                    city.initModel(event);
-//                    break;
-//            }
-//        };
-
         updateUi();
+        eb.send("/city", {
+            action: 'inventoryRequest',
+            from: conf.id
+        });
     };
 
     city.onUpdateLadder = function (teams) {
@@ -73,11 +93,28 @@ window.onload = function () {
         ladder.append(t);
     };
 
+    city.onEvent = function (message, event) {
 
+        eventContainer.append('<div><span style="display:inline-block;width: 80px">' + getHour() + "</span> " + message + '</div>');
+        if (eventContainer.children().size() > 8) {
+            eventContainer.children().first().remove();
+        }
+    }
 };
 
 function updateUi() {
     requestAnimationFrame(updateUi);
     city.redraw();
+}
+
+function sendHello() {
+    var message = {
+        action: 'hello',
+        from: conf.id,
+        team: conf.team,
+        type: conf.type,
+        version: conf.version
+    };
+    eb.send("/city", message);
 }
 

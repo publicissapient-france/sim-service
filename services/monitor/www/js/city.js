@@ -140,10 +140,14 @@ function City(size) {
         return count;
     };
 
-    this.initModel = function (data) {
-        for (var building in data.buildings) {
-            this.addBuilding(data.buildings[building]);
+    this.initModel = function (services) {
+        for (var i in services) {
+            this.addBuilding(services[i]);
         }
+    };
+
+    this.showEvent = function(message){
+
     };
 
     /**
