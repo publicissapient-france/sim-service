@@ -20,7 +20,7 @@ running() {
 }
 
 start() {
-    vertx run "${runfile}" -conf "${cfgfile}" -cluster &> "${logfile}" &
+    vertx run "${runfile}" -conf "${cfgfile}" -cluster -cluster-host 0.0.0.0 &> "${logfile}" &
     echo "${!}" > "${pidfile}"
 }
 
