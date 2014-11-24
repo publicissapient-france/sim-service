@@ -1,5 +1,7 @@
 package fr.xebia.vertx.factory;
 
+import fr.xebia.vertx.factory.message.FactoryMessageBuilder;
+import fr.xebia.vertx.factory.message.FactoryMessageQualificator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
@@ -25,60 +27,78 @@ public class FactoryVerticle extends Verticle {
     private long helloTakId;
     private long farmRequetRate;
     private EventBus eventBus;
+    private JsonObject config;
+    private FactoryMessageBuilder messageBuilder;
+    private FactoryMessageQualificator messageQualificator;
 
     @Override
     public void start() {
+
+        initInstanceFields();
+
+        startListeningStoreOrders();
+
+        startPeriodicHello();
+
+        startListeningOnPrivateFactoryChannel();
+
+        startSendingPeriodicallyRequestToFarms();
+
+    }
+
+    private void initInstanceFields() {
         eventBus = vertx.eventBus();
         waitingOrder = new LinkedList<>();
         id = "store-" + UUID.randomUUID().toString();
-        JsonObject config = container.config();
+        config = container.config();
+        messageBuilder = new FactoryMessageBuilder(eventBus, id);
+        messageQualificator = new FactoryMessageQualificator();
+    }
 
-        /**
-         * Start listening for store orders
-         */
+    private void startListeningStoreOrders() {
         eventBus.registerHandler("/city/factory", order -> {
             if (order.body() != null && order.body() instanceof JsonObject) {
                 container.logger().info("Factory " + id + " receive an order");
                 JsonObject storeOrder = (JsonObject) order.body();
-                if (validateOrder(storeOrder)) {
+                if (messageQualificator.validateOrder(storeOrder)) {
                     acceptOrder(storeOrder);
                 }
             }
         });
+    }
 
-        /*
-         * hello message
-         */
+    private void startPeriodicHello() {
         JsonObject hello = new JsonObject().putString("action", "hello").putString("team", "master").putString("from",
                 id).putString("type", "factory").putString("version", config.getString("version", "unknown"));
-
-        //start periodic hello publishing
         helloTakId = vertx.setPeriodic(config.getLong("helloRate"), l -> {
             eventBus.publish("/city", hello);
             container.logger().info("Factory " + id + " just send hello to every one !");
         });
+    }
 
-        /**
-         * Start listening for farm responses
-         */
+    private void startListeningOnPrivateFactoryChannel() {
         eventBus.registerHandler("/city/factory/" + id, incomingMessage -> {
             if (incomingMessage.body() != null && incomingMessage.body() instanceof JsonObject) {
                 JsonObject messageData = (JsonObject) incomingMessage.body();
-                if (isResourceFromFarm(messageData)) {
+                if (messageQualificator.isFromFarm(messageData)) {
                     container.logger().info("Factory " + id + " receive some resources");
-                    incomingMessage.reply(buildAck(messageData));
+                    incomingMessage.reply(messageBuilder.buildAck(messageData));
                     stock += messageData.getNumber("quantity").longValue();
-                    while (!waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll())) {
-                    }
-                } else if (isInfoFromBank(messageData)) {
-                    // TODO what to do with this info ?
+                    takeBackPendingOrder();
+                } else if (messageQualificator.isInfoFromBank(messageData)) {
                 }
             }
         });
+    }
 
-        /*
-         * Start sending periodically farm request
-         */
+    private void takeBackPendingOrder() {
+        boolean goOn;
+        do {
+            goOn = !waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll());
+        } while (goOn);
+    }
+
+    private void startSendingPeriodicallyRequestToFarms() {
         JsonObject farmRequest = new JsonObject().putString("action", "request").putString("from", id).putNumber(
                 "quantity",
                 10);
@@ -93,10 +113,10 @@ public class FactoryVerticle extends Verticle {
         if (checkStock(storeOrder)) {
             res = true;
             String replyAdress = "/city/store/" + storeOrder.getString("from");
-            eventBus.sendWithTimeout(replyAdress, buildOrderResponse(storeOrder), 5000, ack -> {
+            eventBus.sendWithTimeout(replyAdress, messageBuilder.buildOrderResponse(storeOrder), 5000, ack -> {
                 if (ack.result().body() != null && ack.result().body() instanceof JsonObject) {
                     JsonObject ackData = (JsonObject) ack.result().body();
-                    if (validateAck(ackData)) {
+                    if (messageQualificator.validateAck(ackData)) {
                         stock -= ackData.getNumber("quantity").longValue();
                         quantitySalled += ackData.getNumber("quantity").longValue();
                     }
@@ -111,49 +131,5 @@ public class FactoryVerticle extends Verticle {
 
     private boolean checkStock(JsonObject order) {
         return order.getNumber("quantity").longValue() <= stock;
-    }
-
-    private boolean validateOrder(JsonObject order) {
-        return order.getString("action") != null
-                && order.getString("action").equals("request")
-                && order.getString("from") != null
-                && order.getNumber("quantity") != null
-                && order.getNumber("cost") != null;
-    }
-
-    private JsonObject buildOrderResponse(JsonObject request) {
-        return new JsonObject().putString("action", "response")
-                .putString("from", id)
-                .putNumber("quantity", request.getNumber("quantity"))
-                .putNumber("cost", request.getNumber("cost"));
-    }
-    
-    private JsonObject buildAck(JsonObject messageData){
-        return new JsonObject().putString("action", "acquittement")
-                            .putString("from", id)
-                            .putNumber("quantity", messageData.getNumber("quantity"));
-    }
-
-    private boolean validateAck(JsonObject ack) {
-        return ack.getString("action") != null
-                && ack.getString("action").equals("acquittement")
-                && ack.getNumber("quantity") != null;
-    }
-
-    private boolean isResourceFromFarm(JsonObject data) {
-        return data.getString("action") != null
-                && data.getString("action").equals("response")
-                && data.getNumber("quantity") != null
-                && data.getNumber("cost") != null;
-    }
-
-    private boolean isInfoFromBank(JsonObject data) {
-        return data.getString("action") != null
-                && (data.getString("action").equals("purchase")
-                    || data.getString("action").equals("sale")
-                    || data.getString("action").equals("cost"))
-                && data.getString("from") != null
-                && data.getNumber("quantity") != null
-                && data.getNumber("cost") != null;
     }
 }
