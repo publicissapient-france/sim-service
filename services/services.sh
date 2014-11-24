@@ -20,7 +20,7 @@ running() {
 }
 
 start() {
-    vertx run "${runfile}" -conf "${cfgfile}" -cluster 2>&1 "${logfile}" &
+    vertx run "${runfile}" -conf "${cfgfile}" -cluster &> "${logfile}" &
     echo "${!}" > "${pidfile}"
 }
 
@@ -33,9 +33,9 @@ logs() {
 }
 
 case "${action}" in
-    remote-*)
+    remote-* )
         rsync -az "${dirname}" "${username}@${hostname}:services" && ssh "${username}@${hostname}" "services/services.sh ${action#remote-} ${module} ${config}"
-        exit "${?}" ;; # if action is remotely-executed the script must stop
+        exit "${?}" ;; # if action is remotely-executed local part of the script must stop here
     start )
         running && echo "${config} is still running" || start ;;
     stop )
