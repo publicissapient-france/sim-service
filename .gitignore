@@ -1,5 +1,6 @@
 .gradle
 mods.idea/
+*.pid
 *.iml
 .gradle
 gradle
@@ -9,3 +10,5 @@ gradlew
 gradlew.bat
 
 terraform/terraform.tfvars
+
+terraform/terraform.tfstate*

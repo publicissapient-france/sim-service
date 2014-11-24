@@ -30,8 +30,8 @@ function Team(name) {
     this.factories = [];
     this.color = null;
     this.getId = function () {
-        return this.name.replace(" ", "")
-    }
+        return this.name.replace(" ", "");
+    };
 }
 
 function Factory(id) {
@@ -140,10 +140,14 @@ function City(size) {
         return count;
     };
 
-    this.initModel = function (data) {
-        for (var building in data.buildings) {
-            this.addBuilding(data.buildings[building]);
+    this.initModel = function (services) {
+        for (var i in services) {
+            this.addBuilding(services[i]);
         }
+    };
+
+    this.showEvent = function(message){
+
     };
 
     /**

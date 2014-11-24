@@ -17,4 +17,3 @@ var sockJSServer = vertx.createSockJSServer(httpServer);
 sockJSServer.bridge({prefix: '/eventbus'}, [{}], [{}]);
 
 httpServer.listen(8080);
-

@@ -1,5 +1,6 @@
 # Configure the AWS Provider
-
+# debian base ami : ami-1d61a76a
+# sim-service ami : ami-443e8f33
 provider "aws" {
     access_key = "${var.access_key}"
     secret_key = "${var.secret_key}"
@@ -19,32 +20,21 @@ resource "aws_security_group" "simservice-sg" {
 }
 
 resource "aws_instance" "factory" {
-    count = 0
-    key_name = "insecure-sim-service"
-    ami = "ami-f8af0d8f"
+    count = 3
+    key_name = "sim-service"
+    ami = "ami-443e8f33"
     instance_type = "m1.small"
     tags {
         Name = "SimService node#${count.index}"
         Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
-    connection {
-        user = "ubuntu"
-        key_file = "insecure-sim-service.pem"
-    }
-
-    provisioner "remote-exec" {
-        inline = [
-        "sudo apt-get -y update",
-        "sudo apt-get -y install openjdk-7-jdk",
-        ]
-    }
 
 }
 
 resource "aws_instance" "core" {
-    key_name = "insecure-sim-service"
-    ami = "ami-f8af0d8f"
+    key_name = "sim-service"
+    ami = "ami-1d61a76a"
     instance_type = "m1.small"
     tags {
         Name = "SimService core"
@@ -62,25 +52,4 @@ resource "aws_subnet" "simservice-net" {
           Name = "SimService subnet"
           Project = "SimService"
       }
-}
-
-# DNS
-
-variable "domains" {
-    default = {
-        sim0 = "sim0"
-        sim1 = "sim1"
-        sim2 = "sim2"
-        sim3 = "sim3"
-    }
-}
-
-resource "aws_route53_record" "factory-record" {
-#    count = 3
-#    zone_id = "${aws_route53_zone.primary.zone_id}"
-    zone_id = "Z28O5PDK1WPCSR"
-    name = "sim-core.aws.xebiatechevent.info"
-    type = "A"
-    ttl = "300"
-    records = ["${aws_instance.core.public_ip}"]
 }
