@@ -1,7 +1,7 @@
 package fr.xebia.vertx.factory;
 
 import fr.xebia.vertx.factory.message.FactoryMessageBuilder;
-import fr.xebia.vertx.factory.message.FactoryMessageQualificator;
+import fr.xebia.vertx.factory.message.FactoryMessageAnalyser;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
@@ -29,7 +29,7 @@ public class FactoryVerticle extends Verticle {
     private EventBus eventBus;
     private JsonObject config;
     private FactoryMessageBuilder messageBuilder;
-    private FactoryMessageQualificator messageQualificator;
+    private FactoryMessageAnalyser messageQualificator;
 
     @Override
     public void start() {
@@ -48,12 +48,12 @@ public class FactoryVerticle extends Verticle {
         id = "store-" + UUID.randomUUID().toString();
         config = container.config();
         messageBuilder = new FactoryMessageBuilder(eventBus, id);
-        messageQualificator = new FactoryMessageQualificator();
+        messageQualificator = new FactoryMessageAnalyser();
     }
 
     private void startListeningStoreOrders() {
         eventBus.registerHandler("/city/factory", order -> {
-            if (order.body() != null && order.body() instanceof JsonObject) {
+            if (messageQualificator.isJsonBody(order)) {
                 container.logger().info("Factory " + id + " receive an order");
                 if (messageQualificator.validateOrder((JsonObject) order.body())) {
                     acceptOrder((JsonObject) order.body());
@@ -71,10 +71,10 @@ public class FactoryVerticle extends Verticle {
 
     private void startListeningOnPrivateFactoryChannel() {
         eventBus.registerHandler("/city/factory/" + id, incomingMessage -> {
-            if (incomingMessage.body() != null && incomingMessage.body() instanceof JsonObject) {
+            if (messageQualificator.isJsonBody(incomingMessage)) {
                 JsonObject messageData = (JsonObject) incomingMessage.body();
                 if (messageQualificator.isFromFarm(messageData)) {
-                    container.logger().info("Factory " + id + " receive some resources");
+                    container.logger().info("Factory " + id + " receive ack from farm");
                     incomingMessage.reply(messageBuilder.buildAck(messageData));
                 } else if (messageQualificator.isInfoFromBank(messageData)) {
                     handleBankMessage(messageData);
@@ -84,22 +84,12 @@ public class FactoryVerticle extends Verticle {
     }
 
     private void startSendingPeriodicallyRequestToFarms() {
-        JsonObject farmRequest = new JsonObject().putString("action", "request").putString("from", id).putNumber(
-                "quantity",
-                10);
         farmRequetRate = vertx.setPeriodic(config.getLong("farmRequestRate"), l -> {
-            eventBus.publish("/city/farm", farmRequest);
-            container.logger().info("Factory " + id + " just send a request for resources to all farm !");
+            eventBus.publish("/city/farm", messageBuilder.buildFarmRequest(id, 10));
+            container.logger().info("Factory " + id + " just send a request for resources to all farm.");
         });
     }
     
-    private void takeBackPendingOrder() {
-        boolean goOn;
-        do {
-            goOn = !waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll());
-        } while (goOn);
-    }
-
     private void handleBankMessage(JsonObject bankMessage) {
         int quantity = bankMessage.getNumber("quantity").intValue();
         switch (bankMessage.getString("action")) {
@@ -115,8 +105,15 @@ public class FactoryVerticle extends Verticle {
                 break;
             default:
                 container.logger().info("Unknow action in a message from the bank : " + bankMessage.getString("action"));
-                ;
+                break;
         }
+    }
+    
+    private void takeBackPendingOrder() {
+        boolean goOn;
+        do {
+            goOn = !waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll());
+        } while (goOn);
     }
 
     private boolean acceptOrder(JsonObject storeOrder) {

@@ -58,5 +58,12 @@ public class FactoryMessageBuilder {
                 .putString("type", "factory")
                 .putString("version", version);
     }
+    
+    public JsonObject buildFarmRequest(String id, Number quantity){
+        return new JsonObject()
+                .putString("action", "request")
+                .putString("from", id)
+                .putNumber("quantity",quantity);
+    }
 
 }

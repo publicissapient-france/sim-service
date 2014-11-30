@@ -5,6 +5,7 @@
  */
 package fr.xebia.vertx.factory.message;
 
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -13,12 +14,13 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author jerdct
  */
-public class FactoryMessageQualificator {
+public class FactoryMessageAnalyser {
 
     /**
      * Validate an order
+     *
      * @param order
-     * @return 
+     * @return
      */
     public boolean validateOrder(JsonObject order) {
         return order.getString("action") != null
@@ -30,8 +32,9 @@ public class FactoryMessageQualificator {
 
     /**
      * validate an ack
+     *
      * @param ack
-     * @return 
+     * @return
      */
     public boolean validateAck(JsonObject ack) {
         return ack.getString("action") != null
@@ -41,8 +44,9 @@ public class FactoryMessageQualificator {
 
     /**
      * Determine if the message comes from a farm
+     *
      * @param message
-     * @return 
+     * @return
      */
     public boolean isFromFarm(JsonObject message) {
         return message.getString("action") != null
@@ -53,8 +57,9 @@ public class FactoryMessageQualificator {
 
     /**
      * Determine if the message comme from the bank.
+     *
      * @param message
-     * @return 
+     * @return
      */
     public boolean isInfoFromBank(JsonObject message) {
         return message.getString("action") != null
@@ -64,6 +69,10 @@ public class FactoryMessageQualificator {
                 && message.getString("from") != null
                 && message.getNumber("quantity") != null
                 && message.getNumber("cost") != null;
+    }
+
+    public boolean isJsonBody(Message message) {
+        return message.body() != null && message.body() instanceof JsonObject;
     }
 
 }
