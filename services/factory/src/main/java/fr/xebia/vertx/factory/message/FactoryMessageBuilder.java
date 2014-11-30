@@ -49,5 +49,14 @@ public class FactoryMessageBuilder {
                 .putString("from", factorId)
                 .putNumber("quantity", messageData.getNumber("quantity"));
     }
+    
+    public JsonObject buildHelloMessage(String id, String version){
+        return new JsonObject()
+                .putString("action", "hello")
+                .putString("team", "master")
+                .putString("from", id)
+                .putString("type", "factory")
+                .putString("version", version);
+    }
 
 }

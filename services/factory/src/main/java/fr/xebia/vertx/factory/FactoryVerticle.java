@@ -35,13 +35,9 @@ public class FactoryVerticle extends Verticle {
     public void start() {
 
         initInstanceFields();
-
         startListeningStoreOrders();
-
         startPeriodicHello();
-
         startListeningOnPrivateFactoryChannel();
-
         startSendingPeriodicallyRequestToFarms();
 
     }
@@ -59,19 +55,16 @@ public class FactoryVerticle extends Verticle {
         eventBus.registerHandler("/city/factory", order -> {
             if (order.body() != null && order.body() instanceof JsonObject) {
                 container.logger().info("Factory " + id + " receive an order");
-                JsonObject storeOrder = (JsonObject) order.body();
-                if (messageQualificator.validateOrder(storeOrder)) {
-                    acceptOrder(storeOrder);
+                if (messageQualificator.validateOrder((JsonObject) order.body())) {
+                    acceptOrder((JsonObject) order.body());
                 }
             }
         });
     }
 
     private void startPeriodicHello() {
-        JsonObject hello = new JsonObject().putString("action", "hello").putString("team", "master").putString("from",
-                id).putString("type", "factory").putString("version", config.getString("version", "unknown"));
         helloTakId = vertx.setPeriodic(config.getLong("helloRate"), l -> {
-            eventBus.publish("/city", hello);
+            eventBus.publish("/city", messageBuilder.buildHelloMessage(id, config.getString("version", "unknown")));
             container.logger().info("Factory " + id + " just send hello to every one !");
         });
     }
@@ -90,6 +83,16 @@ public class FactoryVerticle extends Verticle {
         });
     }
 
+    private void startSendingPeriodicallyRequestToFarms() {
+        JsonObject farmRequest = new JsonObject().putString("action", "request").putString("from", id).putNumber(
+                "quantity",
+                10);
+        farmRequetRate = vertx.setPeriodic(config.getLong("farmRequestRate"), l -> {
+            eventBus.publish("/city/farm", farmRequest);
+            container.logger().info("Factory " + id + " just send a request for resources to all farm !");
+        });
+    }
+    
     private void takeBackPendingOrder() {
         boolean goOn;
         do {
@@ -113,18 +116,7 @@ public class FactoryVerticle extends Verticle {
             default:
                 container.logger().info("Unknow action in a message from the bank : " + bankMessage.getString("action"));
                 ;
-
         }
-    }
-
-    private void startSendingPeriodicallyRequestToFarms() {
-        JsonObject farmRequest = new JsonObject().putString("action", "request").putString("from", id).putNumber(
-                "quantity",
-                10);
-        farmRequetRate = vertx.setPeriodic(config.getLong("farmRequestRate"), l -> {
-            eventBus.publish("/city/farm", farmRequest);
-            container.logger().info("Factory " + id + " just send a request for resources to all farm !");
-        });
     }
 
     private boolean acceptOrder(JsonObject storeOrder) {
