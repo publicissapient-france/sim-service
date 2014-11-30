@@ -12,7 +12,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * A class that is responsible for building Json message for the factory.
  *
- * @author jerdct
+ * @author xebia
  */
 public class FactoryMessageBuilder {
 
@@ -31,10 +31,13 @@ public class FactoryMessageBuilder {
      * @return
      */
     public JsonObject buildOrderResponse(JsonObject request) {
-        return new JsonObject().putString("action", "response")
-                .putString("from", factorId)
-                .putNumber("quantity", request.getNumber("quantity"))
-                .putNumber("cost", request.getNumber("cost"));
+        return new JsonObject().putString(MessageField.ACTION.getFieldName(), 
+                        MessageFieldValue.RESPONSE.getFieldValue())
+                .putString(MessageField.FROM.getFieldName(), factorId)
+                .putNumber(MessageField.QUANTITY.getFieldName(),
+                        request.getNumber(MessageField.QUANTITY.getFieldName()))
+                .putNumber(MessageField.COST.getFieldName(),
+                        request.getNumber(MessageField.COST.getFieldName()));
     }
 
     /**
@@ -45,25 +48,29 @@ public class FactoryMessageBuilder {
      * @return
      */
     public JsonObject buildAck(JsonObject messageData) {
-        return new JsonObject().putString("action", "acquittement")
-                .putString("from", factorId)
-                .putNumber("quantity", messageData.getNumber("quantity"));
+        return new JsonObject().putString(MessageField.ACTION.getFieldName(), 
+                        MessageFieldValue.ACQUITTEMENT.getFieldValue())
+                .putString(MessageField.FROM.getFieldName(), factorId)
+                .putNumber(MessageField.QUANTITY.getFieldName(),
+                        messageData.getNumber(MessageField.QUANTITY.getFieldName()));
     }
     
     public JsonObject buildHelloMessage(String id, String version){
         return new JsonObject()
-                .putString("action", "hello")
-                .putString("team", "master")
-                .putString("from", id)
-                .putString("type", "factory")
-                .putString("version", version);
+                .putString(MessageField.ACTION.getFieldName(), 
+                        MessageFieldValue.HELLO.getFieldValue())
+                .putString(MessageField.TEAM.getFieldName(), "master")
+                .putString(MessageField.FROM.getFieldName(), id)
+                .putString(MessageField.TYPE.getFieldName(), "factory")
+                .putString(MessageField.VERSION.getFieldName(), version);
     }
     
     public JsonObject buildFarmRequest(String id, Number quantity){
         return new JsonObject()
-                .putString("action", "request")
-                .putString("from", id)
-                .putNumber("quantity",quantity);
+                .putString(MessageField.ACTION.getFieldName(), 
+                        MessageFieldValue.REQUEST.getFieldValue())
+                .putString(MessageField.FROM.getFieldName(), id)
+                .putNumber(MessageField.QUANTITY.getFieldName(),quantity);
     }
 
 }

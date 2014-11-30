@@ -39,16 +39,15 @@ public class FactoryTest extends TestVerticle {
             if (h.body() != null & h.body() instanceof JsonObject) {
                 vertx.cancelTimer(cancelId);
                 JsonObject hello = (JsonObject) h.body();
-                VertxAssert.assertEquals(hello.getString("action"), "hello");
-                VertxAssert.assertEquals(hello.getString("team"), "master");
+                VertxAssert.assertEquals("hello", hello.getString("action"));
+                VertxAssert.assertEquals("master", hello.getString("team"));
                 VertxAssert.assertNotNull(hello.getString("from"));
-                VertxAssert.assertEquals(hello.getString("type"), "factory");
+                VertxAssert.assertEquals("factory", hello.getString("type"));
                 VertxAssert.assertNotNull(hello.getString("version"));
                 if (count.incrementAndGet() > 1) {
                     vertx.cancelTimer(cancelId);
                     testComplete();
                 }
-
             } else {
                 fail();
             }

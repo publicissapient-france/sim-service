@@ -12,7 +12,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * Class that is responsible for qualification of factory message.
  *
- * @author jerdct
+ * @author xebia
  */
 public class FactoryMessageAnalyser {
 
@@ -23,11 +23,12 @@ public class FactoryMessageAnalyser {
      * @return
      */
     public boolean validateOrder(JsonObject order) {
-        return order.getString("action") != null
-                && order.getString("action").equals("request")
-                && order.getString("from") != null
-                && order.getNumber("quantity") != null
-                && order.getNumber("cost") != null;
+        return order.getString(MessageField.ACTION.getFieldName()) != null
+                && order.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.REQUEST.getFieldValue())
+                && order.getString(MessageField.FROM.getFieldName()) != null
+                && order.getNumber(MessageField.QUANTITY.getFieldName()) != null
+                && order.getNumber(MessageField.COST.getFieldName()) != null;
     }
 
     /**
@@ -37,9 +38,10 @@ public class FactoryMessageAnalyser {
      * @return
      */
     public boolean validateAck(JsonObject ack) {
-        return ack.getString("action") != null
-                && ack.getString("action").equals("acquittement")
-                && ack.getNumber("quantity") != null;
+        return ack.getString(MessageField.ACTION.getFieldName()) != null
+                && ack.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.ACQUITTEMENT.getFieldValue())
+                && ack.getNumber(MessageField.QUANTITY.getFieldName()) != null;
     }
 
     /**
@@ -49,10 +51,11 @@ public class FactoryMessageAnalyser {
      * @return
      */
     public boolean isFromFarm(JsonObject message) {
-        return message.getString("action") != null
-                && message.getString("action").equals("response")
-                && message.getNumber("quantity") != null
-                && message.getNumber("cost") != null;
+        return message.getString(MessageField.ACTION.getFieldName()) != null
+                && message.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.RESPONSE.getFieldValue())
+                && message.getNumber(MessageField.QUANTITY.getFieldName()) != null
+                && message.getNumber(MessageField.COST.getFieldName()) != null;
     }
 
     /**
@@ -62,13 +65,16 @@ public class FactoryMessageAnalyser {
      * @return
      */
     public boolean isInfoFromBank(JsonObject message) {
-        return message.getString("action") != null
-                && (message.getString("action").equals("purchase")
-                || message.getString("action").equals("sale")
-                || message.getString("action").equals("cost"))
-                && message.getString("from") != null
-                && message.getNumber("quantity") != null
-                && message.getNumber("cost") != null;
+        return message.getString(MessageField.ACTION.getFieldName()) != null
+                && (message.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.PURCHASE.getFieldValue())
+                || message.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.SALE.getFieldValue())
+                || message.getString(MessageField.ACTION.getFieldName())
+                        .equals(MessageFieldValue.COST.getFieldValue()))
+                && message.getString(MessageField.FROM.getFieldName()) != null
+                && message.getNumber(MessageField.QUANTITY.getFieldName()) != null
+                && message.getNumber(MessageField.COST.getFieldName()) != null;
     }
 
     public boolean isJsonBody(Message message) {

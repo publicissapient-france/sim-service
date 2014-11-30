@@ -1,5 +1,6 @@
 package fr.xebia.vertx.factory;
 
+import fr.xebia.vertx.factory.message.MessageField;
 import fr.xebia.vertx.factory.message.FactoryMessageBuilder;
 import fr.xebia.vertx.factory.message.FactoryMessageAnalyser;
 import java.util.LinkedList;
@@ -29,7 +30,7 @@ public class FactoryVerticle extends Verticle {
     private EventBus eventBus;
     private JsonObject config;
     private FactoryMessageBuilder messageBuilder;
-    private FactoryMessageAnalyser messageQualificator;
+    private FactoryMessageAnalyser messageAnalyser;
 
     @Override
     public void start() {
@@ -48,14 +49,14 @@ public class FactoryVerticle extends Verticle {
         id = "store-" + UUID.randomUUID().toString();
         config = container.config();
         messageBuilder = new FactoryMessageBuilder(eventBus, id);
-        messageQualificator = new FactoryMessageAnalyser();
+        messageAnalyser = new FactoryMessageAnalyser();
     }
 
     private void startListeningStoreOrders() {
         eventBus.registerHandler("/city/factory", order -> {
-            if (messageQualificator.isJsonBody(order)) {
+            if (messageAnalyser.isJsonBody(order)) {
                 container.logger().info("Factory " + id + " receive an order");
-                if (messageQualificator.validateOrder((JsonObject) order.body())) {
+                if (messageAnalyser.validateOrder((JsonObject) order.body())) {
                     acceptOrder((JsonObject) order.body());
                 }
             }
@@ -71,12 +72,12 @@ public class FactoryVerticle extends Verticle {
 
     private void startListeningOnPrivateFactoryChannel() {
         eventBus.registerHandler("/city/factory/" + id, incomingMessage -> {
-            if (messageQualificator.isJsonBody(incomingMessage)) {
+            if (messageAnalyser.isJsonBody(incomingMessage)) {
                 JsonObject messageData = (JsonObject) incomingMessage.body();
-                if (messageQualificator.isFromFarm(messageData)) {
+                if (messageAnalyser.isFromFarm(messageData)) {
                     container.logger().info("Factory " + id + " receive ack from farm");
                     incomingMessage.reply(messageBuilder.buildAck(messageData));
-                } else if (messageQualificator.isInfoFromBank(messageData)) {
+                } else if (messageAnalyser.isInfoFromBank(messageData)) {
                     handleBankMessage(messageData);
                 }
             }
@@ -92,7 +93,7 @@ public class FactoryVerticle extends Verticle {
     
     private void handleBankMessage(JsonObject bankMessage) {
         int quantity = bankMessage.getNumber("quantity").intValue();
-        switch (bankMessage.getString("action")) {
+        switch (bankMessage.getString(MessageField.ACTION.getFieldName())) {
             case "purchase":
                 stock += quantity;
                 takeBackPendingOrder();
@@ -104,7 +105,8 @@ public class FactoryVerticle extends Verticle {
             case "Cost": //todo : define behavior;
                 break;
             default:
-                container.logger().info("Unknow action in a message from the bank : " + bankMessage.getString("action"));
+                container.logger().info("Unknow action in a message from the bank : " 
+                        + bankMessage.getString(MessageField.ACTION.getFieldName()));
                 break;
         }
     }
@@ -120,7 +122,7 @@ public class FactoryVerticle extends Verticle {
         boolean res;
         if (checkStock(storeOrder)) {
             res = true;
-            String replyAdress = "/city/store/" + storeOrder.getString("from");
+            String replyAdress = "/city/store/" + storeOrder.getString(MessageField.FROM.getFieldName());
             eventBus.send(replyAdress, messageBuilder.buildOrderResponse(storeOrder));
         } else {
             res = false;
@@ -130,6 +132,6 @@ public class FactoryVerticle extends Verticle {
     }
 
     private boolean checkStock(JsonObject order) {
-        return order.getNumber("quantity").longValue() <= stock;
+        return order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= stock;
     }
 }
