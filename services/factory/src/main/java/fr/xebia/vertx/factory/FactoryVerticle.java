@@ -83,9 +83,8 @@ public class FactoryVerticle extends Verticle {
                 if (messageQualificator.isFromFarm(messageData)) {
                     container.logger().info("Factory " + id + " receive some resources");
                     incomingMessage.reply(messageBuilder.buildAck(messageData));
-                    stock += messageData.getNumber("quantity").longValue();
-                    takeBackPendingOrder();
                 } else if (messageQualificator.isInfoFromBank(messageData)) {
+                    handleBankMessage(messageData);
                 }
             }
         });
@@ -96,6 +95,26 @@ public class FactoryVerticle extends Verticle {
         do {
             goOn = !waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll());
         } while (goOn);
+    }
+
+    private void handleBankMessage(JsonObject bankMessage) {
+        int quantity = bankMessage.getNumber("quantity").intValue();
+        switch (bankMessage.getString("action")) {
+            case "purchase":
+                stock += quantity;
+                takeBackPendingOrder();
+                break;
+            case "sale":
+                quantitySalled += quantity;
+                stock -= quantity;
+                break;
+            case "Cost": //todo : define behavior;
+                break;
+            default:
+                container.logger().info("Unknow action in a message from the bank : " + bankMessage.getString("action"));
+                ;
+
+        }
     }
 
     private void startSendingPeriodicallyRequestToFarms() {
@@ -113,15 +132,7 @@ public class FactoryVerticle extends Verticle {
         if (checkStock(storeOrder)) {
             res = true;
             String replyAdress = "/city/store/" + storeOrder.getString("from");
-            eventBus.sendWithTimeout(replyAdress, messageBuilder.buildOrderResponse(storeOrder), 5000, ack -> {
-                if (ack.result().body() != null && ack.result().body() instanceof JsonObject) {
-                    JsonObject ackData = (JsonObject) ack.result().body();
-                    if (messageQualificator.validateAck(ackData)) {
-                        stock -= ackData.getNumber("quantity").longValue();
-                        quantitySalled += ackData.getNumber("quantity").longValue();
-                    }
-                }
-            });
+            eventBus.send(replyAdress, messageBuilder.buildOrderResponse(storeOrder));
         } else {
             res = false;
             waitingOrder.offer(storeOrder);

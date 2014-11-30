@@ -101,6 +101,12 @@ public class FactoryTest extends TestVerticle {
                     || !(factoryAck.result().body() instanceof JsonObject)) {
                         fail();
                     }
+                    // send now ack from the bank.
+                    vertx.eventBus().send("/city/factory/" + request.getString("from"), new JsonObject()
+                            .putString("action",  "purchase")
+                            .putString("from", "bank")
+                            .putNumber("quantity", request.getNumber("quantity"))
+                            .putNumber("cost", 1000));
                 });
     }
 
