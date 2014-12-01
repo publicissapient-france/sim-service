@@ -55,11 +55,11 @@ public class FactoryMessageBuilder {
                         messageData.getNumber(MessageField.QUANTITY.getFieldName()));
     }
     
-    public JsonObject buildHelloMessage(String id, String version){
+    public JsonObject buildHelloMessage(String id, String version, String team){
         return new JsonObject()
                 .putString(MessageField.ACTION.getFieldName(), 
                         MessageFieldValue.HELLO.getFieldValue())
-                .putString(MessageField.TEAM.getFieldName(), "master")
+                .putString(MessageField.TEAM.getFieldName(), team)
                 .putString(MessageField.FROM.getFieldName(), id)
                 .putString(MessageField.TYPE.getFieldName(), "factory")
                 .putString(MessageField.VERSION.getFieldName(), version);

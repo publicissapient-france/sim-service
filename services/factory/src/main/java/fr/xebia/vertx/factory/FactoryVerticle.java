@@ -65,7 +65,7 @@ public class FactoryVerticle extends Verticle {
 
     private void startPeriodicHello() {
         helloTakId = vertx.setPeriodic(config.getLong("helloRate"), l -> {
-            eventBus.publish("/city", messageBuilder.buildHelloMessage(id, config.getString("version", "unknown")));
+            eventBus.publish("/city", messageBuilder.buildHelloMessage(id, config.getString("version", "unknown"), config.getString("team", "master")));
             container.logger().info("Factory " + id + " just send hello to every one !");
         });
     }
