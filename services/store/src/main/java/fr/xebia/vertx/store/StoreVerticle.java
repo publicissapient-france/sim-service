@@ -43,7 +43,7 @@ public class StoreVerticle extends Verticle {
          */
         JsonObject hello = new JsonObject();
         hello.putString("action", "hello");
-        hello.putString("team", "master");
+        hello.putString("team", "masters");
         hello.putString("from", id);
         hello.putString("type", "store");
         hello.putString("version", conf.getString("version", "unknown"));
