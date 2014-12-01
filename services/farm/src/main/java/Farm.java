@@ -84,7 +84,7 @@ public class Farm extends Verticle {
         JsonObject hello = new JsonObject();
         hello.putString("action", "hello");
         hello.putString("from", id);
-        hello.putString("team", "master");
+        hello.putString("team", "masters");
         hello.putString("type", "farm");
         hello.putString("version", "1.0");
         eventBus.publish(adresses.getString("city"), hello);
