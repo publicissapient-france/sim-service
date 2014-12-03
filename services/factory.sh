@@ -22,7 +22,7 @@ running() {
 }
 
 start() {
-    nohup vertx run "${runfile}" -conf "${cfgfile}" -cluster -cluster-host 0.0.0.0 > "${logfile}" 2>&1 & echo "${!}" > "${pidfile}"
+    nohup vertx run "${runfile}" -conf "${cfgfile}" -cluster > "${logfile}" 2>&1 & echo "${!}" > "${pidfile}"
 }
 
 stop() {
