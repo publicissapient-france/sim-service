@@ -38,6 +38,8 @@ vertx.eventBus.registerHandler('/city', function (message) {
     var serviceType = message.type;
     var serviceId = message.from;
 
+container.logger.info(message.action + " "+message.team+" "+message.type);
+
     if ('hello' == action && serviceTeam && serviceType && serviceId) {
         var now = new Date().getTime();
 
@@ -170,7 +172,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
             // send stock cost
             vertx.eventBus.send('/city/factory/' + id, {
                 action: 'cost',
-                from: me.id,
+                from: conf.id,
                 quantity: service.stocks,
                 cost: stockCosts
             });
