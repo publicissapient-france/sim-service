@@ -1,14 +1,15 @@
 package fr.xebia.vertx.factory;
 
-import fr.xebia.vertx.factory.message.MessageField;
-import fr.xebia.vertx.factory.message.FactoryMessageBuilder;
 import fr.xebia.vertx.factory.message.FactoryMessageAnalyser;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.UUID;
+import fr.xebia.vertx.factory.message.FactoryMessageBuilder;
+import fr.xebia.vertx.factory.message.MessageField;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
+
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.UUID;
 
 /**
  * Created by Xebia on 12/10/2014.
@@ -46,7 +47,7 @@ public class FactoryVerticle extends Verticle {
     private void initInstanceFields() {
         eventBus = vertx.eventBus();
         waitingOrder = new LinkedList<>();
-        id = "store-" + UUID.randomUUID().toString();
+        id = "factory-" + UUID.randomUUID().toString();
         config = container.config();
         messageBuilder = new FactoryMessageBuilder(eventBus, id);
         messageAnalyser = new FactoryMessageAnalyser();
