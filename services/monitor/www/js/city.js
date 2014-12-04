@@ -9,7 +9,7 @@ function BuildingTypeLoader(types, onready) {
                 onready.call();
             }
         };
-        type.image.src = "img/" + name + ".png";
+        type.image.src = "img/" + type.name + ".png";
     }
 }
 
@@ -39,9 +39,17 @@ function Factory(id) {
     this.score = 0;
 }
 
+function Building(data) {
+    this.data = data;
+    this.location = null;
+    this.buildingType = null;
+    this.hasCollision = function (x, y) {
+        return x >= this.location.x && x <= this.location.x + type.width && y >= this.location.y && y <= this.location.y + this.buildingType.height
+    }
+
+}
 /**
  * City
- * @param context
  * @param size
  * @constructor
  */
@@ -51,11 +59,11 @@ function City(size) {
     this.context = null;
     this.tileUnit = 100;
     this.size = size;
-    this.types = {
+    this.buildableTypes = {
         farm: new BuildingType('farm', 2, 3),
         factory: new BuildingType('factory', 2, 2),
         store: new BuildingType('store', 1, 1),
-        grass: new BuildingType('grass', 1, 1)
+        grass: new BuildingType('snow', 1, 1)
     };
 
     this.buildings = [];
@@ -74,7 +82,7 @@ function City(size) {
         // Draw grass
         for (var i = 0; i < city.size; i++) {
             for (var j = 0; j < city.size; j++) {
-                this.drawBuilding(new Point(i, j), this.types.grass, null);
+                this.drawBuilding(new Point(i, j), this.buildableTypes.grass, null);
             }
         }
 
@@ -105,7 +113,7 @@ function City(size) {
         this.context.closePath();
 
     };
-    new BuildingTypeLoader(this.types, function () {
+    new BuildingTypeLoader(this.buildableTypes, function () {
         that.drawGrass();
         that.onReady();
     });
@@ -120,11 +128,13 @@ function City(size) {
     this.hasCollision = function (buildingType, x, y) {
         for (var w = 0; w < buildingType.width; w++) {
             for (var h = 0; h < buildingType.height; h++) {
-                if (w + x >= this.size) {
+                if (w + x >= this.size || h + y >= this.size) {
                     return true;
                 }
 
-                if (h + y >= this.size || this.matrix[w + x][h + y] != null) {
+                for (var building in this.buildings) {
+                }
+                if (this.matrix[w + x][h + y] != null) {
                     return true;
                 }
             }
@@ -140,13 +150,43 @@ function City(size) {
         return count;
     };
 
+    /**
+     * Init city buildings from inventory
+     * @param services
+     */
     this.initModel = function (services) {
         for (var i in services) {
             this.addBuilding(services[i]);
         }
     };
 
-    this.showEvent = function(message){
+    this.updateModel = function (services) {
+        that = this;
+        // Add unknown
+        services.forEach(function (element) {
+            var service = that.getBuildingById(element.id);
+            if (!service) {
+                that.addBuilding(element);
+            } else {
+                if (service.status == 'down') {
+                    service.status = 'up'
+                }
+            }
+        });
+
+        var found;
+        for (var key in this.buildings) {
+            found = false;
+            for (var i in services) {
+                if(services[i].id == key){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                this.removeBuilding(key);
+            }
+        }
 
     };
 
@@ -155,13 +195,15 @@ function City(size) {
      * @param data
      */
     this.addBuilding = function (data) {
-        var type = this.types[data.type];
+        var type = this.buildableTypes[data.type];
         if (type) {
-            data.location = this.findRandomLocation(type);
+            var building = new Building(data);
+            building.location = this.findRandomLocation(type);
+            building.buildingType=type;
             if (data.id) {
-                this.buildings[data.id] = data;
+                this.buildings[data.id] = building;
             }
-            this.fillMatrix(data.location, type);
+            this.fillMatrix(building.location, type);
             if (type.name == 'factory') {
                 var team = this.teams[data.team];
                 if (team == null) {
@@ -175,14 +217,12 @@ function City(size) {
                     factory.score = data.score;
                 }
                 team.factories[data.id] = factory;
-                this.drawBuilding(data.location, type, team.color);
+                this.drawBuilding(building.location, type, team.color);
                 this.onUpdateLadder(this.teams);
             } else {
-                this.drawBuilding(data.location, type, null);
+                this.drawBuilding(building.location, type, null);
             }
         }
-
-
     };
 
     /**
@@ -271,9 +311,7 @@ function City(size) {
             alpha: 2
         };
         this.events.push(event);
-
         this.onUpdateLadder(this.teams);
-
     };
 
     var delta = 0.1;
@@ -302,8 +340,15 @@ function City(size) {
         }
     };
 
+    this.redrawBuildings = function(){
+        this.drawGrass();
+        for(key in this.buildings){
+            var building = this.buildings[key];
+            this.drawBuilding(building.location,building.buildingType,false);
+        }
+    };
+
     this.getFactoryById = function (factoryId) {
-        console.log(factoryId);
         for (var t in this.teams) {
             var team = this.teams[t];
             for (var f in team.factories) {
@@ -316,6 +361,33 @@ function City(size) {
         return null;
     };
 
+    this.getBuildingById = function (serviceId) {
+        return this.buildings[serviceId];
+    };
+
+    this.handleUpEvent = function (message) {
+        var type = this.buildableTypes[message.type];
+
+        if (type) {
+            var service = this.getBuildingById(message.service);
+            if (!service) {
+                this.addBuilding(message);
+            } else {
+                service.status = 'up';
+            }
+        }
+    };
+
+    this.removeBuilding = function (index) {
+        var old = this.buildings[index];
+        delete this.buildings[index];
+        this.redrawBuildings();
+        if(this.onBuildingRemoved){
+            this.onBuildingRemoved(old);
+        }
+    };
+
+    this.handleDownEvent = function (message) {
+        this.removeBuilding(service.id);
+    }
 }
-
-

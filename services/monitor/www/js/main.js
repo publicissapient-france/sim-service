@@ -1,4 +1,6 @@
 var city;
+const CITE_SIZE = 30;
+
 var conf = {
     id: 'monitor-' + UUID(),
     type: 'monitor',
@@ -15,31 +17,38 @@ function createContext(element, city) {
     context.scale(scaleRatio, scaleRatio);
     return context;
 }
-var host = location.host;
-if (location.hostname == 'localhost') {
-    host = "54.77.63.200:8080";
-}
+var eb = new vertx.EventBus('http://' + location.host + '/eventbus');
 
-var eb = new vertx.EventBus('http://' + host + '/eventbus');
-
-function log(message) {
-    eventContainer.prepend('<div>' + message + '</div>');
-    if (eventContainer.children().size() > 10) {
-        eventContainer.children().last().remove();
+function logMessage(log) {
+    eventContainer.append('<div><span style="display:inline-block;width: 80px">' + getHour() + "</span> " + log + '</div>');
+    if (eventContainer.children().size() > 8) {
+        eventContainer.children().first().remove();
     }
 }
+
 eb.onopen = function () {
+
     eb.registerHandler('/city/monitor', function (message) {
-        city.addBuilding(message);
+        switch (message.action) {
+            case 'up':
+                logMessage("Service " + message.service + " is up");
+                city.handleUpEvent(message);
+                break;
+            case 'down':
+//                logMessage("Service " + message.service + " is down");
+                break;
+            case 'inventoryResponse':
+                city.updateModel(message.services);
+                break;
+        }
     });
 
     eb.registerHandler('/city/monitor/' + conf.id, function (message) {
-        console.log(message);
         city.initModel(message.services);
     });
 
     eb.registerHandler('/city/factory', function (message) {
-        city.onEvent("Store " + message.from + " requested " + message.quantity, message);
+        logMessage("Store " + message.from + " requested " + message.quantity);
     });
 };
 
@@ -52,12 +61,11 @@ function getHour() {
 function padLeft(number) {
     return ( number < 10 ? "0" : "" ) + number;
 }
+
 window.onload = function () {
-
-
     var ladder = $('#ladder').find('#teams');
     eventContainer = $('#events');
-    city = new City(30);
+    city = new City(CITE_SIZE);
 
     var element = document.getElementById('city_canvas');
     city.context = createContext(element, city);
@@ -73,7 +81,6 @@ window.onload = function () {
     };
 
     city.onUpdateLadder = function (teams) {
-        console.log('update ladder');
         var score, team;
         for (var name in teams) {
             team = city.teams[name];
@@ -93,13 +100,13 @@ window.onload = function () {
         ladder.append(t);
     };
 
-    city.onEvent = function (message, event) {
+    city.onBuildingRemoved = function (building) {
+        logMessage("Building " + building.data.id + " has been removed");
+    };
 
-        eventContainer.append('<div><span style="display:inline-block;width: 80px">' + getHour() + "</span> " + message + '</div>');
-        if (eventContainer.children().size() > 8) {
-            eventContainer.children().first().remove();
-        }
-    }
+//    city.onEvent = function (message) {
+//        logMessage(log);
+//    }
 };
 
 function updateUi() {

@@ -1,10 +1,11 @@
 package fr.xebia.vertx.store;
 
-import java.util.Random;
-import java.util.UUID;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
+
+import java.util.Random;
+import java.util.UUID;
 
 /**
  *
@@ -43,8 +44,8 @@ public class StoreVerticle extends Verticle {
          */
         JsonObject hello = new JsonObject();
         hello.putString("action", "hello");
-        hello.putString("team", "masters");
         hello.putString("from", id);
+        hello.putString("team", "masters");
         hello.putString("type", "store");
         hello.putString("version", conf.getString("version", "unknown"));
         /*
