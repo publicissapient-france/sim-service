@@ -103,7 +103,7 @@ public class FactoryVerticle extends Verticle {
                 quantitySalled += quantity;
                 stock -= quantity;
                 break;
-            case "Cost": //todo : define behavior;
+            case "cost": //todo : define behavior;
                 break;
             default:
                 container.logger().info("Unknow action in a message from the bank : " 
