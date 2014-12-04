@@ -140,6 +140,6 @@ public class FactoryVerticle extends Verticle {
 
     private boolean checkStock(JsonObject order) {
         return order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= stock &&
-                order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= premiseStock;
+                premiseStock <= stock;
     }
 }
