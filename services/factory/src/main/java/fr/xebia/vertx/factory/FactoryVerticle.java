@@ -33,6 +33,8 @@ public class FactoryVerticle extends Verticle {
     private FactoryMessageBuilder messageBuilder;
     private FactoryMessageAnalyser messageAnalyser;
 
+    int premiseStock;
+
     @Override
     public void start() {
 
@@ -91,7 +93,7 @@ public class FactoryVerticle extends Verticle {
             container.logger().info("Factory " + id + " just send a request for resources to all farm.");
         });
     }
-    
+
     private void handleBankMessage(JsonObject bankMessage) {
         int quantity = bankMessage.getNumber("quantity").intValue();
         switch (bankMessage.getString(MessageField.ACTION.getFieldName())) {
@@ -106,25 +108,27 @@ public class FactoryVerticle extends Verticle {
             case "cost": //todo : define behavior;
                 break;
             default:
-                container.logger().info("Unknow action in a message from the bank : " 
+                container.logger().info("Unknow action in a message from the bank : "
                         + bankMessage.getString(MessageField.ACTION.getFieldName()));
                 break;
         }
-        container.logger().info("the stock is now : " +stock);
+        container.logger().info("the stock is now : " + stock);
         container.logger().info("the quantity sales are : " + quantitySalled);
     }
-    
+
     private void takeBackPendingOrder() {
         boolean goOn;
         do {
             goOn = !waitingOrder.isEmpty() && acceptOrder(waitingOrder.poll());
         } while (goOn);
+        premiseStock = 0;
     }
 
     private boolean acceptOrder(JsonObject storeOrder) {
         boolean res;
         if (checkStock(storeOrder)) {
             res = true;
+            premiseStock += storeOrder.getInteger(MessageField.QUANTITY.getFieldName());
             String replyAdress = "/city/store/" + storeOrder.getString(MessageField.FROM.getFieldName());
             eventBus.send(replyAdress, messageBuilder.buildOrderResponse(storeOrder));
         } else {
@@ -135,6 +139,7 @@ public class FactoryVerticle extends Verticle {
     }
 
     private boolean checkStock(JsonObject order) {
-        return order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= stock;
+        return order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= stock &&
+                order.getNumber(MessageField.QUANTITY.getFieldName()).longValue() <= premiseStock;
     }
 }
