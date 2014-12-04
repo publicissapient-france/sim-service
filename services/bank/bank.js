@@ -16,19 +16,33 @@ var conf = {
 };
 
 /*
-    Structure : services['farm|factory|store']['1234...'] {
-      alive:true,
-      lastAlive=2351312...,
-      team:'masters',
-      purchases:10,
-      sales:20,
-      costs:4,
-      stocks:5,
-      overStocks:5,
-      underStocks:5
+ Structure : services['farm|factory|store']['1234...'] {
+ alive:true,
+ lastAlive=2351312...,
+ team:'masters',
+ purchases:10,
+ sales:20,
+ costs:4,
+ stocks:5,
+ overStocks:5,
+ underStocks:5
  }
  */
 var services = {};
+function getInventory() {
+    var inventory = [];
+    for (var type in services) {
+        for (var id in services[type]) {
+            var service = services[type][id];
+            if (service.alive) {
+                service.id = id;
+                service.type = type;
+                inventory.push(service);
+            }
+        }
+    }
+    return inventory;
+}
 
 // listen for service hello messages
 vertx.eventBus.registerHandler('/city', function (message) {
@@ -38,7 +52,8 @@ vertx.eventBus.registerHandler('/city', function (message) {
     var serviceType = message.type;
     var serviceId = message.from;
 
-container.logger.info(message.action + " "+message.team+" "+message.type);
+    container.logger.info(JSON.stringify(message));
+
 
     if ('hello' == action && serviceTeam && serviceType && serviceId) {
         var now = new Date().getTime();
@@ -62,21 +77,10 @@ container.logger.info(message.action + " "+message.team+" "+message.type);
         }
         services[serviceType][serviceId].lastAlive = now;
     } else if ('inventoryRequest' == action) {
-        var inventory = [];
-        for (var type in services) {
-            for (var id in services[type]) {
-                var service = services[type][id];
-                if (service.alive) {
-                    service.id = id;
-                    service.type = type;
-                    inventory.push(service);
-                }
-            }
-        }
         vertx.eventBus.send('/city/monitor/' + serviceId, {
             action: 'inventoryResponse',
             from: conf.id,
-            services: inventory
+            services: getInventory()
         });
     }
 });
@@ -99,8 +103,8 @@ vertx.setPeriodic(conf.delay, function (timerID) {
                     action: 'up',
                     from: conf.id,
                     service: service.id,
-                    type:service.type,
-                    team:service.team
+                    type: service.type,
+                    team: service.team
                 });
             } else if (!aliveNow && service.alive) {
                 service.alive = false;
@@ -192,19 +196,10 @@ vertx.setPeriodic(conf.delay, function (timerID) {
 });
 
 vertx.setPeriodic(conf.delay, function (timerID) {
-
-    var minLastAlive = new Date().getTime() - conf.downDelay;
-    for (var type in services) {
-        for (var id in services[type]) {
-            var service = services[type][id];
-            var aliveNow = service.lastAlive > minLastAlive;
-
-            // send status
-            vertx.eventBus.send('/city/monitor', {
-                action: aliveNow ? 'up' : 'down',
-                from: conf.id,
-                service: id
-            });
-        }
-    }
-});
+    vertx.eventBus.send('/city/monitor', {
+        action: 'inventoryResponse',
+        from: conf.id,
+        services: getInventory()
+    });
+})
+;
