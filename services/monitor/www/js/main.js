@@ -29,18 +29,7 @@ function logMessage(log) {
 eb.onopen = function () {
 
     eb.registerHandler('/city/monitor', function (message) {
-        switch (message.action) {
-            case 'up':
-                logMessage("Service " + message.service + " is up");
-                city.handleUpEvent(message);
-                break;
-            case 'down':
-//                logMessage("Service " + message.service + " is down");
-                break;
-            case 'inventoryResponse':
-                city.updateModel(message.services);
-                break;
-        }
+        city.updateModel(message.services);
     });
 
     eb.registerHandler('/city/monitor/' + conf.id, function (message) {
@@ -75,7 +64,7 @@ window.onload = function () {
     city.onReady = function () {
         updateUi();
         eb.send("/city", {
-            action: 'inventoryRequest',
+            action: 'inventory',
             from: conf.id
         });
     };

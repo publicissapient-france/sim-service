@@ -16,105 +16,89 @@ var conf = {
 };
 
 /*
- Structure : services['farm|factory|store']['1234...'] {
- alive:true,
- lastAlive=2351312...,
- team:'masters',
- purchases:10,
- sales:20,
- costs:4,
- stocks:5,
- overStocks:5,
- underStocks:5
+ Structure :
+ services['farm|factory|store']['1234...'] {
+    id:'1234...',
+    type:'farm|factory|store',
+    alive:true,
+    lastAlive=2351312...,
+    team:'masters',
+    purchases:10,
+    sales:20,
+    costs:4,
+    stocks:5,
+    overStocks:5,
+    underStocks:5
  }
  */
 var services = {};
-function getInventory() {
-    var inventory = [];
-    for (var type in services) {
-        for (var id in services[type]) {
-            var service = services[type][id];
-            if (service.alive) {
-                service.id = id;
-                service.type = type;
-                inventory.push(service);
-            }
-        }
-    }
-    return inventory;
-}
 
 // listen for service hello messages
 vertx.eventBus.registerHandler('/city', function (message) {
 
     var action = message.action;
-    var serviceTeam = message.team;
-    var serviceType = message.type;
-    var serviceId = message.from;
+    var team = message.team;
+    var type = message.type;
+    var id = message.from;
 
-    container.logger.info(JSON.stringify(message));
+    console.info(JSON.stringify(message));
 
+    if ('hello' == action && team && type && id) {
 
-    if ('hello' == action && serviceTeam && serviceType && serviceId) {
-        var now = new Date().getTime();
-
-        if (!services[serviceType]) {
+        if (!services[type]) {
             // initialize object for type of service
-            services[serviceType] = {};
+            services[type] = {};
         }
 
-        if (!services[serviceType][serviceId]) {
+        if (!services[type][id]) {
             // initialize object for service
-            services[serviceType][serviceId] = {
-                team: serviceTeam,
+            services[type][id] = {
+                id: id,
+                type: type,
+                alive: true,
+                team: team,
                 purchases: 0,
                 sales: 0,
                 costs: 0,
                 stocks: 0
             };
-
-
         }
-        services[serviceType][serviceId].lastAlive = now;
-    } else if ('inventoryRequest' == action) {
-        vertx.eventBus.send('/city/monitor/' + serviceId, {
-            action: 'inventoryResponse',
+
+        // update lastAlive time flag
+        services[type][id].lastAlive = new Date().getTime();
+
+    } else if ('inventory' == action && id) {
+
+        // on demand send inventory to a specific monitor
+        vertx.eventBus.send('/city/monitor/' + id, {
+            action: action,
             from: conf.id,
-            services: getInventory()
+            services: services
         });
+
+    } else {
+        console.warn('Unknown message received @/city ' + message);
     }
 });
 
-// periodically watch for services as they become up or down
+// periodically send inventory to all monitors
+vertx.setPeriodic(conf.delay, function (timerID) {
+
+    vertx.eventBus.send('/city/monitor', {
+        action: 'inventory',
+        from: conf.id,
+        services: services
+    });
+});
+
+// periodically flag services as they become alive or not
 vertx.setPeriodic(conf.delay, function (timerID) {
 
     var minLastAlive = new Date().getTime() - conf.downDelay;
 
     for (var type in services) {
         for (var id in services[type]) {
-
-            var service = services[type][id];
-            var aliveNow = service.lastAlive > minLastAlive;
-
-            if (aliveNow && !service.alive) {
-                service.alive = true;
-                // send up
-                vertx.eventBus.send('/city/monitor', {
-                    action: 'up',
-                    from: conf.id,
-                    service: service.id,
-                    type: service.type,
-                    team: service.team
-                });
-            } else if (!aliveNow && service.alive) {
-                service.alive = false;
-                // send down
-                vertx.eventBus.send('/city/monitor', {
-                    action: 'down',
-                    from: conf.id,
-                    service: service.id
-                });
-            }
+            var service = services[type][id].alive = service.lastAlive > minLastAlive;
         }
     }
 });
@@ -123,40 +107,49 @@ vertx.setPeriodic(conf.delay, function (timerID) {
 vertx.eventBus.registerHandler('/city/bank', function (message) {
 
     var action = message.action;
+    var farmOrStoreId = message.from;
     var factoryId = message.charge;
     var quantity = message.quantity;
     var cost = message.cost;
 
-    if (factoryId && quantity && cost) {
+    if (factoryId && farmOrStoreId && quantity && cost) {
 
         var factory = services.factory[factoryId];
         if (!factory) {
-            console.warn('Unknown factory received for bill: ' + factoryId);
+            console.warn('Unknown factory received @/city/bank ' + factoryId);
             return;
         }
 
-        if ('purchase' == action) {
+        var farmOrStore;
+        if ('purchase' == action && (farmOrStore = services.farm[farmOrStoreId])) {
             factory.stocks += quantity;
             factory.purchases += cost;
-        } else if ('sale' == action) {
+            farmOrStore.quantity -= quantity;
+            farmOrStore.sales += cost;
+        } else if ('sale' == action && (farmOrStore = services.store[farmOrStoreId])) {
             factory.stocks -= quantity;
             factory.sales += cost;
+            farmOrStore.quantity += quantity;
+            farmOrStore.purchases += cost;
         } else {
-            console.warn('Unknown action received for bill: ' + action);
+            console.warn('Invalid message received @/city/bank ' + message);
             return;
         }
 
-        // send purchase or sale infos
+        // send purchase or sale infos to factory
         vertx.eventBus.send('/city/factory/' + factoryId, {
             action: action,
             from: conf.id,
             quantity: quantity,
             cost: cost
         });
+
+    } else {
+        console.warn('Invalid message received @/city/bank' + message);
     }
 });
 
-// periodically update and send data to monitor service
+// periodically update costs data and send, if necessary, costs related infos to factories
 vertx.setPeriodic(conf.delay, function (timerID) {
 
     for (var id in services.factory) {
@@ -173,7 +166,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
         service.costs += stockCosts;
 
         if (stockCosts !== 0) {
-            // send stock cost
+            // send stocks cost
             vertx.eventBus.send('/city/factory/' + id, {
                 action: 'cost',
                 from: conf.id,
@@ -181,25 +174,5 @@ vertx.setPeriodic(conf.delay, function (timerID) {
                 cost: stockCosts
             });
         }
-
-        // send data
-        vertx.eventBus.send('/city/monitor', {
-            action: 'data',
-            from: conf.id,
-            service: id,
-            purchases: service.purchases,
-            sales: service.sales,
-            costs: service.costs,
-            stocks: service.stocks
-        });
     }
 });
-
-vertx.setPeriodic(conf.delay, function (timerID) {
-    vertx.eventBus.send('/city/monitor', {
-        action: 'inventoryResponse',
-        from: conf.id,
-        services: getInventory()
-    });
-})
-;
