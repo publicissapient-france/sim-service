@@ -110,6 +110,8 @@ public class FactoryVerticle extends Verticle {
                         + bankMessage.getString(MessageField.ACTION.getFieldName()));
                 break;
         }
+        container.logger().info("the stock is now : " +stock);
+        container.logger().info("the quantity sales are : " + quantitySalled);
     }
     
     private void takeBackPendingOrder() {
