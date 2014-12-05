@@ -41,7 +41,7 @@ vertx.eventBus.registerHandler('/city', function (message) {
     var type = message.type;
     var id = message.from;
 
-    console.info(JSON.stringify(message));
+    container.logger.info(JSON.stringify(message));
 
     if ('hello' == action && team && type && id) {
 
