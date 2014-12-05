@@ -8,6 +8,7 @@ var conf = {
     version: 'evil bank',
     team: 'masters',
     delay: container.config.delay || 5000,
+    inventoryDelay: container.config.delay || 2000,
     downDelay: container.config.downDelay || 15000,
     stockDebitThreshold: container.config.stockDebitThreshold || -10,
     stockDebitCost: container.config.stockDebitCost || 5,
@@ -82,7 +83,7 @@ vertx.eventBus.registerHandler('/city', function (message) {
 });
 
 // periodically send inventory to all monitors
-vertx.setPeriodic(conf.delay, function (timerID) {
+vertx.setPeriodic(conf.inventoryDelay, function (timerID) {
 
     vertx.eventBus.send('/city/monitor', {
         action: 'inventory',
