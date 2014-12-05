@@ -59,7 +59,7 @@ $(function () {
             });
 
             eventBus.send("/city", {
-                action: 'inventoryRequest',
+                action: 'inventory',
                 from: conf.id
             });
             updateUi();
@@ -71,9 +71,9 @@ $(function () {
         for (var key in teams) {
             var team = teams[key];
             var teamContainer = $("#team_" + team.getId());
-            teamContainer.find(" .purchases").html(team.totalPurchases() + 10);
-            teamContainer.find(" .costs").html(team.totalCosts() + 20);
-            teamContainer.find(" .sales").html(team.totalSales() + 30);
+            teamContainer.find(" .purchases").html(team.totalPurchases() );
+            teamContainer.find(" .costs").html(team.totalCosts() );
+            teamContainer.find(" .sales").html(team.totalSales() );
         }
     };
 
