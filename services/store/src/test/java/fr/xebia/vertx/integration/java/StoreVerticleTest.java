@@ -42,7 +42,7 @@ public class StoreVerticleTest extends TestVerticle {
             if (h.body() != null & h.body() instanceof JsonObject) {
                 JsonObject hello = (JsonObject) h.body();
                 VertxAssert.assertEquals(hello.getString("action"), "hello");
-                VertxAssert.assertEquals(hello.getString("team"), "master");
+                VertxAssert.assertEquals(hello.getString("team"), "masters");
                 VertxAssert.assertNotNull(hello.getString("from"));
                 VertxAssert.assertEquals(hello.getString("type"), "store");
                 VertxAssert.assertNotNull(hello.getString("version"));
@@ -50,7 +50,6 @@ public class StoreVerticleTest extends TestVerticle {
                     vertx.cancelTimer(cancelId);
                     testComplete();
                 }
-
             } else {
                 fail();
             }
@@ -103,11 +102,11 @@ public class StoreVerticleTest extends TestVerticle {
         container.deployVerticle("fr.xebia.vertx.store.StoreVerticle", loadConf(), 1, r -> {
             vertx.eventBus().registerHandler("/city/factory", h -> {
                 JsonObject order = (JsonObject) h.body();
-                JsonObject delivery = new JsonObject();
-                delivery.putString("action", "response");
-                delivery.putString("from", "factoryxxx");
-                delivery.putNumber("quantity", 10);
-                delivery.putNumber("cost", 1000);
+                JsonObject delivery = new JsonObject()
+                        .putString("action", "response")
+                        .putString("from", "factoryxxx")
+                        .putNumber("quantity", order.getNumber("quantity"))
+                        .putNumber("cost", order.getNumber("cost"));
                 // when
                 vertx.eventBus().sendWithTimeout("/city/store/" + order.getString("from"), delivery, 10000, res -> {
                     // then                    
@@ -115,7 +114,7 @@ public class StoreVerticleTest extends TestVerticle {
                         JsonObject reply = (JsonObject) res.result().body();
                         VertxAssert.assertEquals(reply.getString("action"), "acquittement");
                         VertxAssert.assertEquals(reply.getString("from"), order.getString("from"));
-                        VertxAssert.assertEquals(reply.getNumber("quantity"), Long.valueOf(10));
+                        VertxAssert.assertEquals(reply.getNumber("quantity"), order.getNumber("quantity"));
                         vertx.cancelTimer(cancelId);
                         testComplete();
                     } else {
@@ -136,12 +135,12 @@ public class StoreVerticleTest extends TestVerticle {
         container.deployVerticle("fr.xebia.vertx.store.StoreVerticle", loadConf(), 1, r -> {
             vertx.eventBus().registerHandler("/city/factory", h -> {
                 JsonObject order = (JsonObject) h.body();
-                JsonObject delivery = new JsonObject();
-                delivery.putString("action", "response");
-                delivery.putString("from", "factoryxxx");
-                delivery.putNumber("quantity", 10);
-                delivery.putNumber("cost", 1000);
-                
+                JsonObject delivery = new JsonObject()
+                        .putString("action", "response")
+                        .putString("from", "factoryxxx")
+                        .putNumber("quantity", order.getNumber("quantity"))
+                        .putNumber("cost", order.getNumber("cost"));
+
                 vertx.eventBus().registerHandler("/city/bank", b -> {
                     // then
                     if (b.body() != null & b.body() instanceof JsonObject) {
@@ -149,8 +148,8 @@ public class StoreVerticleTest extends TestVerticle {
                         VertxAssert.assertEquals(sale.getString("action"), "sale");
                         VertxAssert.assertEquals(sale.getString("from"), order.getString("from"));
                         VertxAssert.assertEquals(sale.getString("charge"), "factoryxxx");
-                        VertxAssert.assertEquals(sale.getNumber("quantity"), Long.valueOf(10));
-                        VertxAssert.assertEquals(sale.getNumber("cost"), Long.valueOf(1000));
+                        VertxAssert.assertEquals(sale.getNumber("quantity"), order.getNumber("quantity"));
+                        VertxAssert.assertEquals(sale.getNumber("cost"), order.getNumber("cost"));
                         vertx.cancelTimer(cancelId);
                         testComplete();
                     } else {
