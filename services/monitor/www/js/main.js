@@ -71,9 +71,9 @@ $(function () {
         for (var key in teams) {
             var team = teams[key];
             var teamContainer = $("#team_" + team.getId());
-            teamContainer.find(" .purchases").html(team.totalPurchases() );
-            teamContainer.find(" .costs").html(team.totalCosts() );
-            teamContainer.find(" .sales").html(team.totalSales() );
+            teamContainer.find(".purchases").html(team.totalPurchases());
+            teamContainer.find(".costs").html(team.totalCosts());
+            teamContainer.find(".sales").html(team.totalSales());
         }
     };
 
@@ -97,7 +97,6 @@ $(function () {
     city.onBuildingRemoved = function (building) {
         logger.log("Building " + building.data.id + " has been removed");
     };
-
 
 });
 

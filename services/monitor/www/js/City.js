@@ -11,6 +11,33 @@ function City(size) {
     this.onTeamCreated = null;
     this.onBuildingRemoved = null;
 
+    this.init = function () {
+        this.colors = ['red', 'green', 'blue', 'yellow', 'aquamarine', 'orange'];
+        var that = this;
+        this.context = null;
+        this.tileUnit = 100;
+        this.size = size;
+        var delta = 0.1;
+
+        this.buildableTypes = {
+            farm: new BuildingType('farm', 2, 3),
+            factory: new BuildingType('factory', 2, 2),
+            store: new BuildingType('store', 1, 1),
+            grass: new BuildingType('grass', 1, 1)
+        };
+
+        this.buildings = [];
+        this.events = [];
+        this.teams = [];
+        this.matrix = this.createMatrix(this.size);
+
+        // Preload resources
+        new BuildingTypeLoader(this.buildableTypes, function () {
+            that.drawGrass();
+            that.onReady();
+        });
+    };
+
     this.createMatrix = function (size) {
         var matrix = new Array(size);
         for (var i = 0; i < size; i++) {
@@ -118,15 +145,16 @@ function City(size) {
     this.updateModel = function (services) {
         that = this;
         // Add unknown
-        for (var serviceKey in services) {
-            var element = services[serviceKey];
-            for (var typeKey in element) {
-                var service = that.getBuildingById(element.id);
-                if (!service) {
-                    that.addBuilding(element[typeKey]);
+        var serviceTypeKey, serviceType, serviceKey;
+        for (serviceTypeKey in services) {
+            serviceType = services[serviceTypeKey];
+            for (serviceKey in serviceType) {
+                var building = that.getBuildingById(serviceKey);
+                if (!building) {
+                    that.addBuilding(serviceType[serviceKey]);
                 } else {
-                    if (service.status == 'down') {
-                        service.status = 'up'
+                    if (building.status == 'down') {
+                        building.status = 'up'
                     }
                 }
             }
@@ -135,10 +163,18 @@ function City(size) {
         var found;
         for (var key in this.buildings) {
             found = false;
-            for (var i in services) {
-                if (services[i].id == key) {
-                    found = true;
-                    break;
+            for (serviceTypeKey in services) {
+                serviceType = services[serviceTypeKey];
+                for (serviceKey in serviceType) {
+                    service = serviceType[serviceKey]
+                    if (service.id == key) {
+                        found = true;
+                        building = this.buildings[key];
+                        building.data.costs = service.costs;
+                        building.data.sales = service.sales;
+                        building.data.purchases = service.purchases;
+                        break;
+                    }
                 }
             }
             if (!found) {
@@ -164,7 +200,7 @@ function City(size) {
             this.fillMatrix(building.location, type, true);
             if (type.name == 'factory') {
                 var team = this.teams[data.team];
-                if (team == null) {
+                if (!team) {
                     team = new Team(data.team);
                     team.color = this.colors[this.getTeamsCount()];
                     this.teams[data.team] = team;
@@ -185,9 +221,9 @@ function City(size) {
      */
     this.removeBuilding = function (index) {
         var old = this.buildings[index];
-        delete this.buildings[index];
         this.fillMatrix(old.location, old.buildingType, false);
         this.redrawBuildings();
+        delete this.buildings[index];
         if (this.onBuildingRemoved) {
             this.onBuildingRemoved(old);
         }
@@ -346,30 +382,5 @@ function City(size) {
     };
 
     /*     Init     */
-
-    this.colors = ['red', 'green', 'blue', 'yellow', 'aquamarine', 'orange'];
-    var that = this;
-    this.context = null;
-    this.tileUnit = 100;
-    this.size = size;
-    var delta = 0.1;
-
-    this.buildableTypes = {
-        farm: new BuildingType('farm', 2, 3),
-        factory: new BuildingType('factory', 2, 2),
-        store: new BuildingType('store', 1, 1),
-        grass: new BuildingType('grass', 1, 1)
-    };
-
-    this.buildings = [];
-    this.events = [];
-    this.teams = [];
-    this.matrix = this.createMatrix(this.size);
-
-    // Preload resources
-    new BuildingTypeLoader(this.buildableTypes, function () {
-        that.drawGrass();
-        that.onReady();
-    });
-
+    this.init();
 }
