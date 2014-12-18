@@ -99,7 +99,7 @@ vertx.setPeriodic(conf.delay, function (timerID) {
 
     for (var type in services) {
         for (var id in services[type]) {
-            var service = services[type][id].alive = service.lastAlive > minLastAlive;
+            services[type][id].alive = services[type][id].lastAlive > minLastAlive;
         }
     }
 });
