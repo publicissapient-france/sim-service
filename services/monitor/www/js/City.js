@@ -133,7 +133,10 @@ function City(size) {
         for (var serviceKey in services) {
             var service = services[serviceKey];
             for (var typeKey in service) {
-                this.addBuilding(service[typeKey]);
+                var service2 = service[typeKey];
+                if (service2.alive) {
+                    this.addBuilding(service2);
+                }
             }
         }
     };
@@ -145,44 +148,43 @@ function City(size) {
     this.updateModel = function (services) {
         that = this;
         // Add unknown
-        var serviceTypeKey, serviceType, serviceKey;
+        var serviceTypeKey, serviceType, serviceKey, service;
         for (serviceTypeKey in services) {
             serviceType = services[serviceTypeKey];
             for (serviceKey in serviceType) {
+                service = serviceType[serviceKey];
                 var building = that.getBuildingById(serviceKey);
                 if (!building) {
                     that.addBuilding(serviceType[serviceKey]);
-                } else {
-                    if (building.status == 'down') {
-                        building.status = 'up'
-                    }
                 }
+                building.status = service.alive ? 'up' : 'down';
             }
         }
 
-        var found;
-        for (var key in this.buildings) {
-            found = false;
-            for (serviceTypeKey in services) {
-                serviceType = services[serviceTypeKey];
-                for (serviceKey in serviceType) {
-                    service = serviceType[serviceKey]
-                    if (service.id == key) {
-                        found = true;
-                        building = this.buildings[key];
-                        building.data.costs = service.costs;
-                        building.data.sales = service.sales;
-                        building.data.purchases = service.purchases;
-                        break;
-                    }
-                }
-            }
-            if (!found) {
-                this.removeBuilding(key);
-            }
-        }
+
+//        var found;
+//        for (var key in this.buildings) {
+//            found = false;
+//            for (serviceTypeKey in services) {
+//                serviceType = services[serviceTypeKey];
+//                for (serviceKey in serviceType) {
+//                    service = serviceType[serviceKey]
+//                    if (service.id == key) {
+//                        found = true;
+//                        building = this.buildings[key];
+//                        building.data.costs = service.costs;
+//                        building.data.sales = service.sales;
+//                        building.data.purchases = service.purchases;
+//                        break;
+//                    }
+//                }
+//            }
+//            if (!found) {
+//                this.removeBuilding(key);
+//            }
+//        }
         this.onUpdateLadder(this.getTeamsReport());
-    };
+    }
 
     /**
      * Add building to the city
@@ -272,7 +274,7 @@ function City(size) {
         var scaleRatio = (p1.x - p3.x) / building.image.width;
         var scaledWidth = building.image.width * scaleRatio;
         var scaledHeight = building.image.height * scaleRatio;
-        this.context.drawImage(building.image, p0.x - (p0.x - p3.x), p0.y - scaledHeight - (p0.y - p2.y), scaledWidth, scaledHeight);
+        this.context.drawImage(building.status == 'up' ? building.image.up : building.image.down, p0.x - (p0.x - p3.x), p0.y - scaledHeight - (p0.y - p2.y), scaledWidth, scaledHeight);
     };
 
 

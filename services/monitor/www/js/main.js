@@ -35,6 +35,7 @@ $(function () {
     city.animationContext = createContext(element, city);
 
     city.onReady = function () {
+        console.log("City ready");
         eventBus = new vertx.EventBus('http://' + location.host + '/eventbus');
 
         eventBus.onopen = function () {

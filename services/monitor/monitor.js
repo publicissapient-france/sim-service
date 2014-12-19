@@ -9,6 +9,7 @@ httpServer.requestHandler(function (req) {
     } else if (req.path().indexOf('..') == -1) {
         file = req.path();
     }
+    console.log('GET '+req.path());
     req.response.sendFile('www/' + file);
 });
 

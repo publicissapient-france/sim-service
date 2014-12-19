@@ -30,13 +30,17 @@ function BuildingTypeLoader(types, callback) {
                 callback.call();
             }
         };
-        type.image.src = "img/" + type.name + ".png";
+        type.image.up.src = "img/" + type.name + "-up.png";
+        type.image.down.src = "img/" + type.name + "-down.png";
     }
 }
 
 function BuildingType(name, width, height) {
     this.name = name;
-    this.image = new Image();
+    this.image = {
+        up : new Image(),
+        down : new Image()
+    };
     this.width = width;
     this.height = height;
 }
