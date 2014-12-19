@@ -23,7 +23,10 @@ function City(size) {
             farm: new BuildingType('farm', 2, 3),
             factory: new BuildingType('factory', 2, 2),
             store: new BuildingType('store', 1, 1),
-            grass: new BuildingType('grass', 1, 1)
+            grass: new BuildingType('grass', 1, 1),
+            bank: new BuildingType('bank', 3, 2),
+            stadium: new BuildingType('stadium', 6, 3),
+            tree: new BuildingType('tree', 1, 1)
         };
 
         this.buildings = [];
@@ -59,7 +62,7 @@ function City(size) {
         // Draw grass
         for (var i = 0; i < city.size; i++) {
             for (var j = 0; j < city.size; j++) {
-                this.drawBuilding(new Point(i, j), this.buildableTypes.grass, null);
+                this.drawBuilding(new Point(i, j), this.buildableTypes.grass, null, null);
             }
         }
 
@@ -130,13 +133,11 @@ function City(size) {
      * @param services
      */
     this.initModel = function (services) {
-        for (var serviceKey in services) {
-            var service = services[serviceKey];
-            for (var typeKey in service) {
-                var service2 = service[typeKey];
-                if (service2.alive) {
-                    this.addBuilding(service2);
-                }
+        for (var typeKey in services) {
+            var type = services[typeKey];
+            for (var serviceKey in type) {
+                var service = type[serviceKey];
+                this.addBuilding(service);
             }
         }
     };
@@ -155,36 +156,15 @@ function City(size) {
                 service = serviceType[serviceKey];
                 var building = that.getBuildingById(serviceKey);
                 if (!building) {
-                    that.addBuilding(serviceType[serviceKey]);
+                    that.addBuilding(service);
+                    building = that.getBuildingById(serviceKey);
                 }
                 building.status = service.alive ? 'up' : 'down';
             }
         }
-
-
-//        var found;
-//        for (var key in this.buildings) {
-//            found = false;
-//            for (serviceTypeKey in services) {
-//                serviceType = services[serviceTypeKey];
-//                for (serviceKey in serviceType) {
-//                    service = serviceType[serviceKey]
-//                    if (service.id == key) {
-//                        found = true;
-//                        building = this.buildings[key];
-//                        building.data.costs = service.costs;
-//                        building.data.sales = service.sales;
-//                        building.data.purchases = service.purchases;
-//                        break;
-//                    }
-//                }
-//            }
-//            if (!found) {
-//                this.removeBuilding(key);
-//            }
-//        }
+        this.redrawBuildings();
         this.onUpdateLadder(this.getTeamsReport());
-    }
+    };
 
     /**
      * Add building to the city
@@ -196,6 +176,7 @@ function City(size) {
             var building = new Building(data);
             building.location = this.findRandomLocation(type);
             building.buildingType = type;
+            building.status = data.alive ? 'up' : 'down';
             if (data.id) {
                 this.buildings[data.id] = building;
             }
@@ -209,10 +190,11 @@ function City(size) {
                     this.onTeamCreated(team);
                 }
                 team.factories[data.id] = building;
-                this.drawBuilding(building.location, type, team.color);
+                building.team=team;
+                this.drawBuilding(building.location, type, team.color, building.status);
                 this.onUpdateLadder(this.getTeamsReport());
             } else {
-                this.drawBuilding(building.location, type, null);
+                this.drawBuilding(building.location, type, null, building.status);
             }
         }
     };
@@ -255,7 +237,7 @@ function City(size) {
      * @param building
      * @param background
      */
-    this.drawBuilding = function (location, building, background) {
+    this.drawBuilding = function (location, building, background, status) {
         var p0 = this.translate(location.x, location.y);
         var p1 = this.translate(location.x + building.width, location.y);
         var p2 = this.translate(location.x + building.width, location.y + building.height);
@@ -271,10 +253,11 @@ function City(size) {
             this.context.fill();
             this.context.closePath();
         }
-        var scaleRatio = (p1.x - p3.x) / building.image.width;
-        var scaledWidth = building.image.width * scaleRatio;
-        var scaledHeight = building.image.height * scaleRatio;
-        this.context.drawImage(building.status == 'up' ? building.image.up : building.image.down, p0.x - (p0.x - p3.x), p0.y - scaledHeight - (p0.y - p2.y), scaledWidth, scaledHeight);
+        var image = status == 'up' ? building.image.up : building.image.down;
+        var scaleRatio = (p1.x - p3.x) / image.width;
+        var scaledWidth = image.width * scaleRatio;
+        var scaledHeight = image.height * scaleRatio;
+        this.context.drawImage(image, p0.x - (p0.x - p3.x), p0.y - scaledHeight - (p0.y - p2.y), scaledWidth, scaledHeight);
     };
 
 
@@ -344,7 +327,7 @@ function City(size) {
         this.drawGrass();
         for (key in this.buildings) {
             var building = this.buildings[key];
-            this.drawBuilding(building.location, building.buildingType, false);
+            this.drawBuilding(building.location, building.buildingType, building.team ? building.team.color : false,building.status);
         }
     };
 
@@ -365,18 +348,18 @@ function City(size) {
         return this.buildings[serviceId];
     };
 
-    this.handleUpEvent = function (message) {
-        var type = this.buildableTypes[message.type];
-
-        if (type) {
-            var service = this.getBuildingById(message.service);
-            if (!service) {
-                this.addBuilding(message);
-            } else {
-                service.status = 'up';
-            }
-        }
-    };
+//    this.handleUpEvent = function (message) {
+//        var type = this.buildableTypes[message.type];
+//
+//        if (type) {
+//            var service = this.getBuildingById(message.service);
+//            if (!service) {
+//                this.addBuilding(message);
+//            } else {
+//                service.status = 'up';
+//            }
+//        }
+//    };
 
     this.getTeamsReport = function () {
         return this.teams;

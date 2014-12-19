@@ -13,6 +13,11 @@ httpServer.requestHandler(function (req) {
     req.response.sendFile('www/' + file);
 });
 
+vertx.eventBus.registerHandler('/city/monitor/', function (message) {
+    console.log(message);
+});
+
+
 var sockJSServer = vertx.createSockJSServer(httpServer);
 
 sockJSServer.bridge({prefix: '/eventbus'}, [{}], [{}]);

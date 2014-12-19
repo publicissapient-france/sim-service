@@ -22,16 +22,19 @@ function padLeft(number) {
 function BuildingTypeLoader(types, callback) {
     var imgCount = 0;
     for (var name in types) {
-        imgCount++;
+        imgCount+=2;
         var type = types[name];
-        type.image.onload = function () {
+        function imageLoaded(element) {
             imgCount--;
             if (imgCount == 0) {
                 callback.call();
             }
-        };
+        }
+
         type.image.up.src = "img/" + type.name + "-up.png";
+        type.image.up.onload = imageLoaded;
         type.image.down.src = "img/" + type.name + "-down.png";
+        type.image.down.onload = imageLoaded;
     }
 }
 

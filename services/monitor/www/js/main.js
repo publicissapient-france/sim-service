@@ -35,7 +35,24 @@ $(function () {
     city.animationContext = createContext(element, city);
 
     city.onReady = function () {
-        console.log("City ready");
+        city.addBuilding({
+            id: 'bank',
+            type: 'bank',
+            alive: true
+        });
+
+        city.addBuilding({
+            id: 'stadium',
+            type: 'stadium',
+            alive: true
+        });
+
+        var tree = {type: 'tree', alive: true};
+        for (var i = 0; i < 10; i++) {
+            tree.id = 'tree-' + UUID();
+            city.addBuilding(tree);
+        }
+
         eventBus = new vertx.EventBus('http://' + location.host + '/eventbus');
 
         eventBus.onopen = function () {
@@ -98,7 +115,6 @@ $(function () {
     city.onBuildingRemoved = function (building) {
         logger.log("Building " + building.data.id + " has been removed");
     };
-
 });
 
 function updateUi() {
