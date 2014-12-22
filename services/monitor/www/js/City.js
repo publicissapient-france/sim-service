@@ -190,7 +190,7 @@ function City(size) {
                     this.onTeamCreated(team);
                 }
                 team.factories[data.id] = building;
-                building.team=team;
+                building.team = team;
                 this.drawBuilding(building.location, type, team.color, building.status);
                 this.onUpdateLadder(this.getTeamsReport());
             } else {
@@ -276,26 +276,6 @@ function City(size) {
         return new Point(x, y);
     };
 
-    /*
-     Handlers
-     */
-    this.handleScore = function (data) {
-
-        var factory = this.getFactoryById(data.factoryId);
-        factory.score += data.score;
-
-        var building = this.buildings[data.factoryId];
-        var event = {
-            type: 'money',
-            message: (data.score >= 0 ? "+" : "" ) + " " + data.score,
-            color: data.score >= 0 ? '#64FE2E' : '#FF4000',
-            location: this.translate(building.location.x, building.location.y),
-            alpha: 2
-        };
-        this.events.push(event);
-        this.onUpdateLadder(this.getTeamsReport());
-    };
-
     /**
      * Redraw city canvas
      */
@@ -325,9 +305,18 @@ function City(size) {
 
     this.redrawBuildings = function () {
         this.drawGrass();
-        for (key in this.buildings) {
-            var building = this.buildings[key];
-            this.drawBuilding(building.location, building.buildingType, building.team ? building.team.color : false,building.status);
+        var that = this;
+        var buildings = [];
+        for(var key in this.buildings){
+            buildings.push(this.buildings[key]);
+        }
+        buildings.sort(function (a, b) {
+            return  (a.location.x +  that.size * a.location.y) - (b.location.x + that.size * b.location.y);
+        });
+
+        for(key in buildings){
+            var building = buildings[key];
+            that.drawBuilding(building.location, building.buildingType, building.team ? building.team.color : false, building.status);
         }
     };
 
@@ -348,22 +337,20 @@ function City(size) {
         return this.buildings[serviceId];
     };
 
-//    this.handleUpEvent = function (message) {
-//        var type = this.buildableTypes[message.type];
-//
-//        if (type) {
-//            var service = this.getBuildingById(message.service);
-//            if (!service) {
-//                this.addBuilding(message);
-//            } else {
-//                service.status = 'up';
-//            }
-//        }
-//    };
-
     this.getTeamsReport = function () {
         return this.teams;
 
+    };
+
+    this.addDecoration = function(name,count){
+        if(!count){
+            count = 1;
+        }
+        var decoration = {type: name, alive: true};
+        for (var i = 0; i < count; i++) {
+            decoration.id = 'name-' + UUID();
+            city.addBuilding(decoration);
+        }
     };
 
     /*     Init     */

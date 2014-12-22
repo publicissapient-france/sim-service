@@ -18,8 +18,6 @@ function createContext(element, city) {
     return context;
 }
 
-//setInterval(sendHello, 2000);
-
 $(function () {
     logger = new Logger({
         container: "#events",
@@ -35,23 +33,10 @@ $(function () {
     city.animationContext = createContext(element, city);
 
     city.onReady = function () {
-        city.addBuilding({
-            id: 'bank',
-            type: 'bank',
-            alive: true
-        });
 
-        city.addBuilding({
-            id: 'stadium',
-            type: 'stadium',
-            alive: true
-        });
-
-        var tree = {type: 'tree', alive: true};
-        for (var i = 0; i < 10; i++) {
-            tree.id = 'tree-' + UUID();
-            city.addBuilding(tree);
-        }
+        city.addDecoration('bank');
+        city.addDecoration('stadium');
+        city.addDecoration('tree',10);
 
         eventBus = new vertx.EventBus('http://' + location.host + '/eventbus');
 
