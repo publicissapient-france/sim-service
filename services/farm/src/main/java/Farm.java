@@ -28,8 +28,12 @@ public class Farm extends Verticle {
         sayHello(eventBus, adresses, id);
 
 
-        Handler<Message<JsonObject>> myHandler = message -> {
+        Handler<Message<JsonObject>> requestHandler = message -> {
             container.logger().info("Received a request");
+            if (message.body() == null || !(message.body() instanceof JsonObject)) {
+                container.logger().warn("Message rejected " + message.body());
+                return;
+            }
             Integer quantity = message.body().getInteger("quantity");
             if (quantity != null) {
                 container.logger().info(("Farm get a message for stock " + quantity));
@@ -46,6 +50,10 @@ public class Farm extends Verticle {
                 Handler<AsyncResult<Message<JsonObject>>> handlerResponse = response -> {
                     if (response.succeeded()) {
                         container.logger().info("Received reply for an offer");
+                        if (response.result().body() == null || !(response.result().body() instanceof JsonObject)) {
+                            container.logger().warn("Message rejected " + message.body());
+                            return;
+                        }
                         JsonObject bill = new JsonObject();
                         bill.putString("action", "purchase");
                         bill.putString("from", id);
@@ -65,7 +73,7 @@ public class Farm extends Verticle {
                 eventBus.sendWithTimeout(adresses.getString("factory") + message.body().getString("from"), offer, config.getInteger("timeoutReply"), handlerResponse);
             }
         };
-        eventBus.registerHandler(adresses.getString("farm"), myHandler);
+        eventBus.registerHandler(adresses.getString("farm"), requestHandler);
 
         vertx.setPeriodic(config.getInteger("heartBeat"), timerId -> sayHello(eventBus, adresses, id));
 
