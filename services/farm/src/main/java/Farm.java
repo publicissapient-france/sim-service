@@ -52,6 +52,8 @@ public class Farm extends Verticle {
                         container.logger().info("Received reply for an offer");
                         if (response.result().body() == null || !(response.result().body() instanceof JsonObject)) {
                             container.logger().warn("Message rejected " + message.body());
+                            promisedStock -= availableQuantity;
+                            container.logger().info("stock=" + stock + " promisedStock=" + promisedStock);
                             return;
                         }
                         JsonObject bill = new JsonObject();
