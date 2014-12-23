@@ -5,6 +5,8 @@
  */
 package fr.xebia.vertx.store;
 
+import java.util.Objects;
+
 /**
  *
  * An order.
@@ -15,10 +17,12 @@ public class Order {
 
     private final long quantity;
     private final long cost;
+    private final String orderID;
 
-    private Order(long quantity, long cost) {
+    private Order(long quantity, long cost, String orderID) {
         this.quantity = quantity;
         this.cost = cost;
+        this.orderID = orderID;
     }
 
     public long getQuantity() {
@@ -29,15 +33,20 @@ public class Order {
         return cost;
     }
 
-    public static Order getInstance(long quantity, long cost) {
-        return new Order(quantity, cost);
+    public static Order getInstance(long quantity, long cost, String orderID) {
+        return new Order(quantity, cost, orderID); 
+    }
+
+    public String getOrderID() {
+        return orderID;
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 47 * hash + (int) (this.quantity ^ (this.quantity >>> 32));
-        hash = 47 * hash + (int) (this.cost ^ (this.cost >>> 32));
+        hash = 59 * hash + (int) (this.quantity ^ (this.quantity >>> 32));
+        hash = 59 * hash + (int) (this.cost ^ (this.cost >>> 32));
+        hash = 59 * hash + Objects.hashCode(this.orderID);
         return hash;
     }
 
@@ -56,8 +65,12 @@ public class Order {
         if (this.cost != other.cost) {
             return false;
         }
+        if (!Objects.equals(this.orderID, other.orderID)) {
+            return false;
+        }
         return true;
     }
+
 
 
 

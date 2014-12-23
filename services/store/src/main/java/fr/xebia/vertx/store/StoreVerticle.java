@@ -1,12 +1,12 @@
 package fr.xebia.vertx.store;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -25,6 +25,8 @@ public class StoreVerticle extends Verticle {
     private long orderRate;
     private long quantity;
     private long cost;
+    private boolean acceptPartialOffer;
+    private final Random r = new Random();
     /*
      * 
      */
@@ -34,7 +36,7 @@ public class StoreVerticle extends Verticle {
     /*
      *
      */
-    private final Set<Order> pendingOrders = new HashSet<>();
+    private final Map<String, Order> pendingOrders = new HashMap<>();
 
     @Override
     public void start(Future<Void> startedResult) {
@@ -81,21 +83,23 @@ public class StoreVerticle extends Verticle {
 
     private void startPeriodicOrder() {
         orderTaskId = vertx.setPeriodic(orderRate, l -> {
-            Random r = new Random();
             vertx.setTimer(r.nextInt((int) orderRate / 2), l2 -> {
-                Order order = Order.getInstance(quantity + r.nextInt((int) quantity / 2), cost + r.nextInt(
-                        (int) cost / 2));
-                if (!pendingOrders.contains(order)) {
-                    JsonObject orderObject = new JsonObject()
-                            .putString("action", "request")
-                            .putString("from", id)
-                            .putNumber("quantity", order.getQuantity())
-                            .putNumber("cost", order.getCost());
-                    vertx.eventBus().publish("/city/factory", orderObject);
-                    pendingOrders.add(order);
-                }
+                Order order = buildOrder();
+                JsonObject orderObject = new JsonObject()
+                        .putString("action", "request")
+                        .putString("from", id)
+                        .putString("orderId", order.getOrderID())
+                        .putNumber("quantity", order.getQuantity())
+                        .putNumber("cost", order.getCost());
+                vertx.eventBus().publish("/city/factory", orderObject);
+                pendingOrders.put(order.getOrderID(), order);
             });
         });
+    }
+
+    private Order buildOrder() {
+        return Order.getInstance(quantity + r.nextInt((int) quantity / 2), cost + r.nextInt(
+                (int) cost / 2), "order-" + UUID.randomUUID().toString());
     }
 
     private void listeningForFactoryDelivery() {
@@ -104,13 +108,16 @@ public class StoreVerticle extends Verticle {
                 JsonObject delivery = (JsonObject) r.body();
                 String action = delivery.getString("action", "unknown");
                 String from = delivery.getString("from", "unknown");
-                Order order = Order.getInstance(delivery.getLong("quantity", 0), delivery.getLong("cost", 0));
-                if (isValidDelivery(action, from, order)) {
-                    JsonObject reply = buildAck(order);
-                    r.reply(reply);
-                    JsonObject sale = buildSale(from, order);
-                    vertx.eventBus().send("/city/bank", sale);
-                    pendingOrders.remove(order);
+                String orderId = delivery.getString("orderId", "unknown");
+                if (isValidDelivery(action, from, orderId)) {
+                    Order order = pendingOrders.get(orderId);
+                    if (acceptOrder(order, delivery.getLong("quantity"))) {
+                        JsonObject reply = buildAck(order);
+                        r.reply(reply);
+                        JsonObject sale = buildSale(from, order);
+                        vertx.eventBus().send("/city/bank", sale);
+                        pendingOrders.remove(orderId);
+                    }
                 }
             }
         });
@@ -136,8 +143,15 @@ public class StoreVerticle extends Verticle {
         return reply;
     }
 
-    private boolean isValidDelivery(String action, String from, Order order) {
-        return action.equals("response") && !from.equals("unknown") && pendingOrders.contains(order);
+    private boolean isValidDelivery(String action, String from, String orderId) {
+        return action.equals("response") && !from.equals("unknown") && pendingOrders.containsKey(orderId);
+    }
+
+    private boolean acceptOrder(Order order, long quantityProvided) {
+        if (acceptPartialOffer) {
+            return true;
+        }
+        return order.getQuantity() == quantityProvided;
     }
 
 }
