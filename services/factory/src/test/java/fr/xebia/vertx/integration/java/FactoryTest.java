@@ -40,7 +40,7 @@ public class FactoryTest extends TestVerticle {
                 vertx.cancelTimer(cancelId);
                 JsonObject hello = (JsonObject) h.body();
                 VertxAssert.assertEquals("hello", hello.getString("action"));
-                VertxAssert.assertEquals("master", hello.getString("team"));
+                VertxAssert.assertEquals("team1", hello.getString("team"));
                 VertxAssert.assertNotNull(hello.getString("from"));
                 VertxAssert.assertEquals("factory", hello.getString("type"));
                 VertxAssert.assertNotNull(hello.getString("version"));
@@ -76,7 +76,7 @@ public class FactoryTest extends TestVerticle {
                     JsonObject request = (JsonObject) stockRequest.body();
                     sendResourcesToFactory(id, request);
                     JsonObject order = new JsonObject().putString("action", "request").putString("from", id).putNumber(
-                            "quantity", 10).putNumber("cost", 100);
+                            "quantity", 10).putNumber("cost", 100).putString("orderId", "myOrderId");
                     // when
                     vertx.eventBus().publish("/city/factory", order);
                 }
@@ -115,10 +115,10 @@ public class FactoryTest extends TestVerticle {
             if (response.body() != null && response.body() instanceof JsonObject) {
                 // then
                 JsonObject orderResponse = (JsonObject) response.body();
-                VertxAssert.assertEquals(orderResponse.getString("action"), "response");
+                VertxAssert.assertEquals("response", orderResponse.getString("action"));
                 VertxAssert.assertNotNull(orderResponse.getString("from"));
-                VertxAssert.assertEquals(orderResponse.getNumber("quantity"), 10);
-                VertxAssert.assertEquals(orderResponse.getNumber("cost"), 100);
+                VertxAssert.assertEquals(10, orderResponse.getNumber("quantity"));
+                VertxAssert.assertEquals("myOrderId", orderResponse.getString("orderId"));
                 testComplete();
             } else {
                 fail();

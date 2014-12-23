@@ -36,8 +36,8 @@ public class FactoryMessageBuilder {
                 .putString(MessageField.FROM.getFieldName(), factorId)
                 .putNumber(MessageField.QUANTITY.getFieldName(),
                         request.getNumber(MessageField.QUANTITY.getFieldName()))
-                .putNumber(MessageField.COST.getFieldName(),
-                        request.getNumber(MessageField.COST.getFieldName()));
+                .putString(MessageField.ORDER_ID.getFieldName(),
+                        request.getString(MessageField.ORDER_ID.getFieldName()));
     }
 
     /**

@@ -14,6 +14,7 @@ public enum MessageField {
     FROM("from"),
     ACTION("action"),
     QUANTITY("quantity"),
+    ORDER_ID("orderId"),
     COST("cost"),
     TEAM("team"),
     VERSION("version"),
