@@ -26,6 +26,8 @@ public class StoreVerticle extends Verticle {
     private long quantity;
     private long cost;
     private boolean acceptPartialOffer;
+    private long maximumPendingOrder;
+    private long offerTimeOut;
     private final Random r = new Random();
     /*
      * 
@@ -66,6 +68,9 @@ public class StoreVerticle extends Verticle {
         orderRate = conf.getLong("orderRate", 1000);
         quantity = conf.getLong("quantity", 10);
         cost = conf.getLong("cost", 10);
+        acceptPartialOffer = conf.getBoolean("acceptPartialOffer", false);
+        maximumPendingOrder = conf.getLong("maximumPendingOrder", 20);
+        offerTimeOut = conf.getLong("offerTimeOut", 20000);
     }
 
     private JsonObject buildHelloMessage() {
@@ -83,18 +88,28 @@ public class StoreVerticle extends Verticle {
 
     private void startPeriodicOrder() {
         orderTaskId = vertx.setPeriodic(orderRate, l -> {
-            vertx.setTimer(r.nextInt((int) orderRate / 2), l2 -> {
-                Order order = buildOrder();
-                JsonObject orderObject = new JsonObject()
-                        .putString("action", "request")
-                        .putString("from", id)
-                        .putString("orderId", order.getOrderID())
-                        .putNumber("quantity", order.getQuantity())
-                        .putNumber("cost", order.getCost());
-                vertx.eventBus().publish("/city/factory", orderObject);
-                pendingOrders.put(order.getOrderID(), order);
-            });
+            if (pendingOrders.size() < maximumPendingOrder) {
+                vertx.setTimer(r.nextInt((int) orderRate / 2), l2 -> {
+                    Order order = buildOrder();
+                    JsonObject orderObject = new JsonObject()
+                            .putString("action", "request")
+                            .putString("from", id)
+                            .putString("orderId", order.getOrderID())
+                            .putNumber("quantity", order.getQuantity())
+                            .putNumber("cost", order.getCost());
+                    vertx.eventBus().publish("/city/factory", orderObject);
+                    pendingOrders.put(order.getOrderID(), order);
+                    container.logger().info(
+                            "Store " + id + " just send the order : " + order + " . There is now " + pendingOrders.size() + " pendings orders.");
+                    vertx.setTimer(offerTimeOut, timeOutId -> {
+                        pendingOrders.remove(order.getOrderID());
+                        container.logger().info(
+                            "Store " + id + " just cancel the order : " + order + " because of time out.");
+                    });
+                });
+            }
         });
+
     }
 
     private Order buildOrder() {
@@ -106,12 +121,14 @@ public class StoreVerticle extends Verticle {
         vertx.eventBus().registerHandler("/city/store/" + id, r -> {
             if (r.body() != null && r.body() instanceof JsonObject) {
                 JsonObject delivery = (JsonObject) r.body();
+                container.logger().info("Store " + id + " just receive response : " + delivery + " for an order : ");
                 String action = delivery.getString("action", "unknown");
                 String from = delivery.getString("from", "unknown");
                 String orderId = delivery.getString("orderId", "unknown");
                 if (isValidDelivery(action, from, orderId)) {
                     Order order = pendingOrders.get(orderId);
                     if (acceptOrder(order, delivery.getLong("quantity"))) {
+                        container.logger().info("Store " + id + " just accept a response for the order : " + order);
                         JsonObject reply = buildAck(order);
                         r.reply(reply);
                         JsonObject sale = buildSale(from, order);

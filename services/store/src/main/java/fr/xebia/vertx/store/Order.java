@@ -34,7 +34,7 @@ public class Order {
     }
 
     public static Order getInstance(long quantity, long cost, String orderID) {
-        return new Order(quantity, cost, orderID); 
+        return new Order(quantity, cost, orderID);
     }
 
     public String getOrderID() {
@@ -71,7 +71,9 @@ public class Order {
         return true;
     }
 
-
-
+    @Override
+    public String toString() {
+        return "Order{" + "quantity=" + quantity + ", cost=" + cost + ", orderID=" + orderID + '}';
+    }
 
 }
