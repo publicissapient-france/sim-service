@@ -1,0 +1,9 @@
+{
+    "helloRate" : 5000,
+    "version" : "0.1",
+    "orderRate" : 150,
+    "quantity" : 5,
+    "cost" : 700,
+    "maximumPendingOrder" : 60,
+    "offerTimeOut" : 15000
+}

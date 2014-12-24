@@ -3,5 +3,7 @@
     "version" : "0.1",
     "orderRate" : 1000,
     "quantity" : 10,
-    "cost" : 1000
+    "cost" : 1500,
+    "maximumPendingOrder" : 20,
+    "offerTimeOut" : 20000
 }

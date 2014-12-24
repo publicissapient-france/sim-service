@@ -25,7 +25,6 @@ public class StoreVerticle extends Verticle {
     private long orderRate;
     private long quantity;
     private long cost;
-    private boolean acceptPartialOffer;
     private long maximumPendingOrder;
     private long offerTimeOut;
     private final Random r = new Random();
@@ -68,7 +67,6 @@ public class StoreVerticle extends Verticle {
         orderRate = conf.getLong("orderRate", 1000);
         quantity = conf.getLong("quantity", 10);
         cost = conf.getLong("cost", 10);
-        acceptPartialOffer = conf.getBoolean("acceptPartialOffer", false);
         maximumPendingOrder = conf.getLong("maximumPendingOrder", 20);
         offerTimeOut = conf.getLong("offerTimeOut", 20000);
     }
@@ -89,7 +87,7 @@ public class StoreVerticle extends Verticle {
     private void startPeriodicOrder() {
         orderTaskId = vertx.setPeriodic(orderRate, l -> {
             if (pendingOrders.size() < maximumPendingOrder) {
-                vertx.setTimer(r.nextInt((int) orderRate / 2), l2 -> {
+                vertx.setTimer(Math.max(r.nextInt((int) orderRate / 2),1), l2 -> {
                     Order order = buildOrder();
                     JsonObject orderObject = new JsonObject()
                             .putString("action", "request")
@@ -104,7 +102,7 @@ public class StoreVerticle extends Verticle {
                     vertx.setTimer(offerTimeOut, timeOutId -> {
                         pendingOrders.remove(order.getOrderID());
                         container.logger().info(
-                            "Store " + id + " just cancel the order : " + order + " because of time out.");
+                                "Store " + id + " just cancel the order : " + order + " because of time out.");
                     });
                 });
             }
@@ -125,28 +123,28 @@ public class StoreVerticle extends Verticle {
                 String action = delivery.getString("action", "unknown");
                 String from = delivery.getString("from", "unknown");
                 String orderId = delivery.getString("orderId", "unknown");
+                long orderQuantity = delivery.getLong("quantity");
                 if (isValidDelivery(action, from, orderId)) {
                     Order order = pendingOrders.get(orderId);
-                    if (acceptOrder(order, delivery.getLong("quantity"))) {
-                        container.logger().info("Store " + id + " just accept a response for the order : " + order);
-                        JsonObject reply = buildAck(order);
-                        r.reply(reply);
-                        JsonObject sale = buildSale(from, order);
-                        vertx.eventBus().send("/city/bank", sale);
-                        pendingOrders.remove(orderId);
-                    }
+                    container.logger().info("Store " + id + " just accept a response for the order : " + order);
+                    JsonObject reply = buildAck(order);
+                    r.reply(reply);
+                    JsonObject sale = buildSale(from, order, orderQuantity);
+                    vertx.eventBus().send("/city/bank", sale);
+                    pendingOrders.remove(orderId);
+
                 }
             }
         });
     }
 
-    private JsonObject buildSale(String from, Order order) {
+    private JsonObject buildSale(String from, Order order, long orderQuantity) {
         // send sale to bank
         JsonObject sale = new JsonObject()
                 .putString("action", "sale")
                 .putString("from", id)
                 .putString("charge", from)
-                .putNumber("quantity", order.getQuantity())
+                .putNumber("quantity", orderQuantity)
                 .putNumber("cost", order.getCost());
         return sale;
     }
@@ -162,13 +160,6 @@ public class StoreVerticle extends Verticle {
 
     private boolean isValidDelivery(String action, String from, String orderId) {
         return action.equals("response") && !from.equals("unknown") && pendingOrders.containsKey(orderId);
-    }
-
-    private boolean acceptOrder(Order order, long quantityProvided) {
-        if (acceptPartialOffer) {
-            return true;
-        }
-        return order.getQuantity() == quantityProvided;
     }
 
 }
