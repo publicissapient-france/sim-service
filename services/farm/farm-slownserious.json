@@ -10,5 +10,5 @@
     "cost": 30,
     "timeoutReply": 1000,
     "initialStock": 10,
-    "heartBeat": 500
+    "heartBeat": 5000
 }
