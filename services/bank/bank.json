@@ -1,8 +1,9 @@
 {
   "delay": 5000,
-  "downDelay": 15000,
-  "stockDebitThreshold": -10,
-  "stockDebitCost": 5,
-  "stockCreditThreshold": 100,
-  "stockCreditCost": 2
+  "downDelay": 5000,
+  "inventoryDelay": 5000,
+  "debitStockThreshold": -50,
+  "debitStockCost": 5,
+  "creditStockThreshold": 100,
+  "creditStockCost": 2
 }

@@ -8,28 +8,27 @@ var conf = {
     version: 'evil bank',
     team: 'masters',
     delay: container.config.delay || 5000,
-    inventoryDelay: container.config.delay || 2000,
-    downDelay: container.config.downDelay || 15000,
-    stockDebitThreshold: container.config.stockDebitThreshold || -10,
-    stockDebitCost: container.config.stockDebitCost || 5,
-    stockCreditThreshold: container.config.stockCreditThreshold || 100,
-    stockCreditCost: container.config.stockCreditCost || 2
+    downDelay: container.config.downDelay || 5000,
+    inventoryDelay: container.config.inventoryDelay || 5000,
+    debitStockThreshold: container.config.debitStockThreshold || -10,
+    debitStockCost: container.config.debitStockCost || 5,
+    creditStockThreshold: container.config.creditStockThreshold || 100,
+    creditStockCost: container.config.creditStockCost || 2
 };
 
-/*
- Structure :
- services['farm|factory|store']['1234...'] {
-    id:'1234...',
-    type:'farm|factory|store',
-    alive:true,
-    lastAlive=2351312...,
-    team:'masters',
-    purchases:10,
-    sales:20,
-    costs:4,
-    stocks:5,
-    overStocks:5,
-    underStocks:5
+/**
+ services.farm|factory|store.serviceId = {
+ id:'serviceId',
+ type:'farm|factory|store',
+ alive:true,
+ lastAlive=2351312...,
+ team:'masters',
+ purchases:10,
+ sales:20,
+ costs:4,
+ stocks:5,
+ maxStocks:5,
+ minStocks:5
  }
  */
 var services = {};
@@ -61,7 +60,9 @@ vertx.eventBus.registerHandler('/city', function (message) {
                 purchases: 0,
                 sales: 0,
                 costs: 0,
-                stocks: 0
+                stocks: 0,
+                maxStocks: 0,
+                minStocks: 0
             };
         }
 
@@ -92,7 +93,7 @@ vertx.setPeriodic(conf.inventoryDelay, function (timerID) {
     });
 });
 
-// periodically flag services as they become alive or not
+// periodically update services' alive status
 vertx.setPeriodic(conf.delay, function (timerID) {
 
     var minLastAlive = new Date().getTime() - conf.downDelay;
@@ -113,67 +114,75 @@ vertx.eventBus.registerHandler('/city/bank', function (message) {
     var quantity = message.quantity;
     var cost = message.cost;
 
-    if (factoryId && farmOrStoreId && quantity && cost) {
-
-        var factory = services.factory[factoryId];
-        if (!factory) {
-            console.warn('Unknown factory received @/city/bank ' + factoryId);
-            return;
-        }
-
-        var farmOrStore;
-        if ('purchase' == action && (farmOrStore = services.farm[farmOrStoreId])) {
-            factory.stocks += quantity;
-            factory.purchases += cost;
-            farmOrStore.quantity -= quantity;
-            farmOrStore.sales += cost;
-        } else if ('sale' == action && (farmOrStore = services.store[farmOrStoreId])) {
-            factory.stocks -= quantity;
-            factory.sales += cost;
-            farmOrStore.quantity += quantity;
-            farmOrStore.purchases += cost;
-        } else {
-            console.warn('Invalid message received @/city/bank ' + message);
-            return;
-        }
-
-        // send purchase or sale infos to factory
-        vertx.eventBus.send('/city/factory/' + factoryId, {
-            action: action,
-            from: conf.id,
-            quantity: quantity,
-            cost: cost
-        });
-
-    } else {
-        console.warn('Invalid message received @/city/bank' + message);
+    if (!(factoryId && farmOrStoreId && quantity && cost && action)) {
+        console.warn('Invalid message received @/city/bank ' + message);
+        return;
     }
+
+    var factory = services.factory[factoryId];
+    if (!factory) {
+        console.warn('Unknown factory received @/city/bank ' + factoryId);
+        return;
+    }
+
+    var farmOrStore;
+    if ('purchase' == action && (farmOrStore = services.farm[farmOrStoreId])) {
+        factory.stocks += quantity;
+        factory.purchases += cost;
+        factory.maxStocks = Math.max(factory.maxStocks, factory.stocks);
+        farmOrStore.quantity -= quantity;
+        farmOrStore.sales += cost;
+    } else if ('sale' == action && (farmOrStore = services.store[farmOrStoreId])) {
+        factory.stocks -= quantity;
+        factory.sales += cost;
+        factory.minStocks = Math.min(factory.minStocks, factory.stocks);
+        farmOrStore.quantity += quantity;
+        farmOrStore.purchases += cost;
+    } else {
+        console.warn('Unknown action, farm or store received @/city/bank ' + message);
+        return;
+    }
+
+    // send purchase or sale infos to factory
+    vertx.eventBus.send('/city/factory/' + factoryId, {
+        action: action,
+        from: conf.id,
+        quantity: quantity,
+        cost: cost
+    });
 });
 
-// periodically update costs data and send, if necessary, costs related infos to factories
+// periodically send status data to factory
 vertx.setPeriodic(conf.delay, function (timerID) {
 
     for (var id in services.factory) {
 
-        var service = services.factory[id];
-
-        // update costs as service has credit or debit stocks
-        var stockCosts = 0;
-        if (service.stocks > conf.stockCreditThreshold) {
-            stockCosts = conf.stockCreditCost * Math.abs(service.stocks);
-        } else if (service.stocks < conf.stockDebitThreshold) {
-            stockCosts = conf.stockDebitCost * Math.abs(service.stocks);
+        var factory = services.factory[id];
+        if (!factory.alive) {
+            // do nothing if factory is not alive
+            continue;
         }
-        service.costs += stockCosts;
 
-        if (stockCosts !== 0) {
-            // send stocks cost
-            vertx.eventBus.send('/city/factory/' + id, {
-                action: 'cost',
-                from: conf.id,
-                quantity: service.stocks,
-                cost: stockCosts
-            });
+        var creditStocks = factory.maxStocks - conf.creditStockThreshold;
+        if (creditStocks > 0) {
+            factory.costs += conf.creditStockCost * creditStocks;
         }
+        factory.maxStocks = 0;
+
+        var debitStocks = conf.debitStockThreshold - factory.minStocks;
+        if (debitStocks > 0) {
+            factory.costs += conf.debitStockCost * debitStocks;
+        }
+        factory.minStocks = 0;
+
+        // send status information to factory
+        vertx.eventBus.send('/city/factory/' + id, {
+            action: 'status',
+            from: conf.id,
+            purchases: factory.purchases,
+            sales: factory.sales,
+            costs: factory.costs,
+            stocks: factory.stocks
+        });
     }
 });

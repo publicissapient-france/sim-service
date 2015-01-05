@@ -79,11 +79,10 @@ $ brew install vert.x
 }
 ```
 
-## Purchase, Sale and Cost infos :
+## Purchase and Sale receipts :
 
 * Bank sends Purchase info to "/city/factory/id"
 * Bank sends Sale info to "/city/factory/id"
-* Bank sends Cost info to "/city/factory/id"
 
 
 ```json
@@ -95,28 +94,17 @@ $ brew install vert.x
 }
 ```
 
-## Data, Up and Down metrics :
+## Status metrics :
 
-* Bank sends Data to "/city/monitor"
+* Bank sends status to "/city/factory/id"
 
 ```json
 {
-    "action": "data",
+    "action": "status",
     "from": "bank",
-    "service": 9,
     "purchases": 100,
     "sales": 100,
     "costs": 100,
     "stocks": 100
-}
-```
-
-* Bank sends Up and Down to "/city/monitor"
-
-```json
-{
-    "action": "up|down",
-    "from": "bank",
-    "service": 9
 }
 ```
