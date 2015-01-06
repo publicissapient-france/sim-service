@@ -6,3 +6,5 @@
   tasks:
   - name: configuration du cluster vertx
     template: src=files/cluster.xml.j2 dest=/opt/vert.x/conf/cluster.xml
+  - name: copy test.js
+    template: src=files/test.js.j2 dest=/home/admin/test.js
