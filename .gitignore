@@ -13,3 +13,4 @@ terraform/terraform.tfvars
 
 terraform/terraform.tfstate*
 services/*/*.log
+terraform/private/*

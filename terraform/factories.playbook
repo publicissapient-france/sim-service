@@ -1,0 +1,8 @@
+---
+- hosts: factories
+  vars:
+    core: "{{ lookup('file', 'private/core') }}"
+  remote_user: admin
+  tasks:
+  - name: configuration du cluster vertx
+    template: src=files/cluster.xml.j2 dest=/opt/vert.x/conf/cluster.xml

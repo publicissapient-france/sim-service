@@ -20,7 +20,7 @@ resource "aws_security_group" "simservice-sg" {
 }
 
 resource "aws_instance" "factory" {
-    count = 1
+    count = "${var.factory_count}"
     key_name = "sim-service"
     ami = "ami-24f84b53"
     instance_type = "t1.micro"
@@ -29,6 +29,10 @@ resource "aws_instance" "factory" {
         Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
+
+    provisioner "local-exec" {
+        command = "echo ${element(aws_instance.factory.*.public_ip, count.index)} private_ip=${element(aws_instance.factory.*.private_ip, count.index)}>> private/factories"
+    }
 
 }
 
