@@ -167,13 +167,13 @@ vertx.setPeriodic(conf.delay, function (timerID) {
         if (creditStocks > 0) {
             factory.costs += conf.creditStockCost * creditStocks;
         }
-        factory.maxStocks = 0;
+        factory.maxStocks = factory.stocks;
 
         var debitStocks = conf.debitStockThreshold - factory.minStocks;
         if (debitStocks > 0) {
             factory.costs += conf.debitStockCost * debitStocks;
         }
-        factory.minStocks = 0;
+        factory.minStocks = factory.stocks;
 
         // send status information to factory
         vertx.eventBus.send('/city/factory/' + id, {
