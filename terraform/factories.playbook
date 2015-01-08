@@ -1,7 +1,5 @@
 ---
-- hosts: factories
-  vars:
-    core: "{{ lookup('file', 'private/core') }}"
+- hosts: all
   remote_user: admin
   tasks:
   - name: configuration du cluster vertx
