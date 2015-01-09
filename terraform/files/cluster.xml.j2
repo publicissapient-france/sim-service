@@ -28,12 +28,12 @@
             <tcp-ip enabled="true">
 {% if type == 'core' %}
                 <!-- factories -->
-{% for host in groups['factories'] %}
+{% for host in groups['factory'] %}
                 <interface>{{ hostvars[host]['private_ip'] }}</interface>
 {% endfor %}
 {% endif %}
                 <!-- cores -->
-{% for host in groups['cores'] %}
+{% for host in groups['core'] %}
                 <interface>{{ hostvars[host]['private_ip'] }}</interface>
 {% endfor %}
 
