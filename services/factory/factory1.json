@@ -1,0 +1,6 @@
+{
+    "helloRate" : 1000,
+    "farmRequestRate" : 500,
+    "version" : "0.1",
+    "team" : "team1"
+}
