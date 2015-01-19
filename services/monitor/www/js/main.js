@@ -35,7 +35,7 @@ $(function () {
     city.onReady = function () {
 
         city.addDecoration('bank');
-        city.addDecoration('stadium');
+//        city.addDecoration('stadium');
         city.addDecoration('tree',10);
 
         eventBus = new vertx.EventBus('http://' + location.host + '/eventbus');

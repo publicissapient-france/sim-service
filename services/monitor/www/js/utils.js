@@ -1,9 +1,9 @@
-function Logger(settings){
+function Logger(settings) {
 
     this.eventContainer = $(settings.container);
     this.maxLog = settings.maxLog;
 
-    this.log=function(message) {
+    this.log = function (message) {
         this.eventContainer.append('<div><span style="display:inline-block;width: 80px">' + getHour() + "</span> " + message + '</div>');
         if (this.eventContainer.children().size() > this.maxLog) {
             this.eventContainer.children().first().remove();
@@ -22,28 +22,29 @@ function padLeft(number) {
 function BuildingTypeLoader(types, callback) {
     var imgCount = 0;
     for (var name in types) {
-        imgCount+=2;
-        var type = types[name];
-        function imageLoaded(element) {
-            imgCount--;
-            if (imgCount == 0) {
-                callback.call();
+            function imageLoaded() {
+                imgCount--;
+                if (imgCount == 0) {
+                    callback.call();
+                }
             }
-        }
+        var type = types[name];
+        if (type instanceof BuildingType) {
+            imgCount += type.status.length;
 
-        type.image.up.src = "img/" + type.name + "-up.png";
-        type.image.up.onload = imageLoaded;
-        type.image.down.src = "img/" + type.name + "-down.png";
-        type.image.down.onload = imageLoaded;
+            type.status.forEach(function (status) {
+                type.image[status] = new Image();
+                type.image[status].src = "img/" + type.name + "-" + status + ".png";
+                type.image[status].onload = imageLoaded;
+            });
+        }
     }
 }
 
-function BuildingType(name, width, height) {
+function BuildingType(name, width, height, status) {
     this.name = name;
-    this.image = {
-        up : new Image(),
-        down : new Image()
-    };
+    this.status = status;
+    this.image = {};
     this.width = width;
     this.height = height;
 }
@@ -61,7 +62,7 @@ function Team(name) {
         return this.name.replace(" ", "");
     };
 
-    this.totalPurchases = function() {
+    this.totalPurchases = function () {
         var total = 0;
         for (key in this.factories) {
             total += this.factories[key].data.purchases;
@@ -69,7 +70,7 @@ function Team(name) {
         return total;
     };
 
-    this.totalCosts = function() {
+    this.totalCosts = function () {
         var total = 0;
         for (key in this.factories) {
             total += this.factories[key].data.costs;
@@ -77,7 +78,7 @@ function Team(name) {
         return total;
     };
 
-    this.totalSales = function() {
+    this.totalSales = function () {
         var total = 0;
         for (key in this.factories) {
             total += this.factories[key].data.sales;

@@ -12,7 +12,7 @@ function City(size) {
     this.onBuildingRemoved = null;
 
     this.init = function () {
-        this.colors = ['red', 'green', 'blue', 'yellow', 'aquamarine', 'orange'];
+        this.colors = ['red', 'green', 'blue', 'yellow', 'aquamarine', 'orange','black','pink','purple','grey','coral','DarkKhaki','magenta','lime','Cornsilk'];
         var that = this;
         this.context = null;
         this.tileUnit = 100;
@@ -20,13 +20,12 @@ function City(size) {
         var delta = 0.1;
 
         this.buildableTypes = {
-            farm: new BuildingType('farm', 2, 3),
-            factory: new BuildingType('factory', 2, 2),
-            store: new BuildingType('store', 1, 1),
-            grass: new BuildingType('grass', 1, 1),
-            bank: new BuildingType('bank', 3, 2),
-            stadium: new BuildingType('stadium', 6, 3),
-            tree: new BuildingType('tree', 1, 1)
+            farm: new BuildingType('farm', 2, 3,['up']),
+            factory: new BuildingType('factory', 2, 2,['up','down']),
+            store: new BuildingType('store', 1, 1,['up']),
+            grass: new BuildingType('grass', 1, 1,['up']),
+            bank: new BuildingType('bank', 3, 2,['up']),
+            tree: new BuildingType('tree', 1, 1,['up'])
         };
 
         this.buildings = [];
@@ -253,7 +252,7 @@ function City(size) {
             this.context.fill();
             this.context.closePath();
         }
-        var image = status == 'up' ? building.image.up : building.image.down;
+        var image = building.image[status] ? building.image[status] : building.image['up'];
         var scaleRatio = (p1.x - p3.x) / image.width;
         var scaledWidth = image.width * scaleRatio;
         var scaledHeight = image.height * scaleRatio;
@@ -339,7 +338,6 @@ function City(size) {
 
     this.getTeamsReport = function () {
         return this.teams;
-
     };
 
     this.addDecoration = function(name,count){
