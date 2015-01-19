@@ -23,26 +23,22 @@ resource "aws_instance" "factory" {
     count = "${var.factory_count}"
     key_name = "sim-service"
     ami = "ami-24f84b53"
-    instance_type = "t1.micro"
+    instance_type = "m1.small"
     tags {
         Name = "SimService node#${count.index}"
         Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
-
-    provisioner "local-exec" {
-        command = "echo ${element(aws_instance.factory.*.public_ip, count.index)} private_ip=${element(aws_instance.factory.*.private_ip, count.index)}>> private/factories"
-    }
-
 }
 
 resource "aws_instance" "core" {
+    count = "${var.core_count}"
     key_name = "sim-service"
     ami = "ami-24f84b53"
-    instance_type = "m1.small"
+    instance_type = "m3.medium"
     tags {
-        Name = "SimService core"
-        Project = "SimService"
+            Name = "SimService core#${count.index}"
+            Project = "SimService"
     }
     subnet_id = "${aws_subnet.simservice-net.id}"
 }
@@ -59,20 +55,21 @@ resource "aws_subnet" "simservice-net" {
 }
 
 # DNS
-resource "aws_route53_record" "core-record" {
-    zone_id = "Z28O5PDK1WPCSR"
-    name = "sim-core.aws.xebiatechevent.info"
-    type = "A"
-    ttl = "300"
-    records = ["${aws_instance.core.public_ip}"]
-}
 
-# The following snippet should be available in next terraform release ( current = 0.3.1 )
 resource "aws_route53_record" "factory-record" {
     name = "${concat("sim-factory", count.index, ".aws.xebiatechevent.info")}"
     count = "${var.factory_count}"
     zone_id = "Z28O5PDK1WPCSR"
     type = "A"
     records = ["${element(aws_instance.factory.*.public_ip, count.index)}"]
+    ttl = "1"
+}
+
+resource "aws_route53_record" "core-record" {
+    name = "${concat("sim-core", count.index, ".aws.xebiatechevent.info")}"
+    count = "${var.core_count}"
+    zone_id = "Z28O5PDK1WPCSR"
+    type = "A"
+    records = ["${element(aws_instance.core.*.public_ip, count.index)}"]
     ttl = "1"
 }
